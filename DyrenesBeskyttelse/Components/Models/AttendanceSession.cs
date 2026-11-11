@@ -1,6 +1,6 @@
 ﻿namespace DyrenesBeskyttelse.Components.Models;
 
-public class admin
+public class AttendanceSession
 {
     
 }

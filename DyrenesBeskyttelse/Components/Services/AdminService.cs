@@ -1,6 +1,6 @@
 ﻿namespace DyrenesBeskyttelse.Components.Services;
 
-public class volunteerService
+public class AdminService
 {
     
 }
