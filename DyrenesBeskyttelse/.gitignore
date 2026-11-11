@@ -1,0 +1,167 @@
+﻿
+###############################################################################
+# .NET / ASP.NET CORE / BLAZOR
+###############################################################################
+
+# Build outputs
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Dd]ebugPublic/
+[Rr]eleases/
+artifacts/
+publish/
+out/
+
+# .NET generated files
+project.lock.json
+project.fragment.lock.json
+*.nuget.props
+*.nuget.targets
+*.nupkg
+*.snupkg
+
+# MSBuild logs
+*.binlog
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# ASP.NET scaffolding
+ScaffoldingReadMe.txt
+
+###############################################################################
+# JETBRAINS RIDER / RESHARPER
+###############################################################################
+
+# Rider workspace and project settings
+.idea/
+*.sln.iml
+
+# User-specific settings
+*.DotSettings.user
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+###############################################################################
+# VISUAL STUDIO / VS CODE
+###############################################################################
+
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+###############################################################################
+# TESTING / CODE COVERAGE
+###############################################################################
+
+# Test results
+[Tt]est[Rr]esult*/
+TestResults/
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# Code coverage
+coverage/
+coverage.*
+CodeCoverage/
+*.coverage
+*.coveragexml
+*.opencover.xml
+
+# BenchmarkDotNet
+BenchmarkDotNet.Artifacts/
+
+###############################################################################
+# FRONTEND / JAVASCRIPT / TYPESCRIPT
+###############################################################################
+
+# Node dependencies
+node_modules/
+
+# Frontend build outputs
+dist/
+.next/
+.nuxt/
+
+# Package manager caches
+.npm/
+.pnpm-store/
+
+###############################################################################
+# ENVIRONMENT / SECRETS
+###############################################################################
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# ASP.NET Core user secrets
+secrets.json
+
+# Local development certificates
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Publishing credentials and settings
+*.publishsettings
+*.pubxml.user
+PublishScripts/
+
+###############################################################################
+# DATABASES / LOCAL DATA
+###############################################################################
+
+# SQLite and local database files
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# SQL Server local database files
+*.mdf
+*.ldf
+*.ndf
+
+###############################################################################
+# LOGS / TEMPORARY FILES
+###############################################################################
+
+*.log
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+*.swp
+*.swo
+
+[Ll]og/
+[Ll]ogs/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+###############################################################################
+# LOCAL HISTORY / TOOLING
+###############################################################################
+
+.localhistory/
+.fleet/
+.cr/
+*.cache
+
