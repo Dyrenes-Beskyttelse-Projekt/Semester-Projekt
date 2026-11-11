@@ -9,29 +9,39 @@ public class Admin
     
     [Required]
     [StringLength(100)]
-    public string firstName { get; set; }
+    public string FirstName { get; set; }
     
     [Required]
     [StringLength(100)]
-    public string lastName { get; set; }
+    public string LastName { get; set; }
     
     [Required]
     [StringLength(100)]
-    public string address { get; set; }
+    public string Address { get; set; }
     
     [Required]
     [StringLength(100)]
-    public string email { get; set; }
+    public string Email { get; set; }
     
     [Required]
     [StringLength(100)]
-    public string phoneNumber { get; set; }
+    public string PhoneNumber { get; set; }
     
     [Required]
-    public string passwordHash { get; set; }
+    public string PasswordHash { get; set; }
+
+    public Admin(string FirstName, string LastName, string Address, string Email, string PhoneNumber, string PasswordHash)
+    {
+        this.FirstName = FirstName;
+        this.LastName = LastName;
+        this.Address = Address;
+        this.Email = Email;
+        this.PhoneNumber = PhoneNumber;
+        this.PasswordHash = PasswordHash;
+    }
     
     public string getfullName()
     {
-        return firstName + " " + lastName;
+        return FirstName + " " + LastName;
     }
 }

@@ -9,36 +9,47 @@ public class Volunteer
     
     [Required]
     [StringLength(100)]
-    public string firstName { get; set; }
+    public string FirstName { get; set; }
     
     [Required]
     [StringLength(100)]
-    public string lastName { get; set; }
+    public string LastName { get; set; }
     
     [Required]
     [StringLength(100)]
-    public string address { get; set; }
+    public string Address { get; set; }
     
     [Required]
     [StringLength(100)]
-    public string email { get; set; }
+    public string Email { get; set; }
     
     [Required]
     [StringLength(100)]
-    public string phoneNumber { get; set; }
+    public string PhoneNumber { get; set; }
 
-    [Required] public bool isActive { get; set; } = false;
+    [Required] public bool IsActive { get; set; } = false;
 
-    public List<AttendanceSession> sessions { get; set; } = new List<AttendanceSession>();
-    
-    public string getfullName()
+    public List<AttendanceSession> Sessions { get; set; } = new List<AttendanceSession>();
+
+    public Volunteer(string firstName, string lastName, string address, string email, string phoneNumber)
     {
-        return firstName + " " + lastName;
+        this.FirstName = firstName;
+        this.LastName = lastName;
+        this.Address = address;
+        this.Email = email;
+        this.PhoneNumber = phoneNumber;
+        this.IsActive = false;
+        this.Sessions = new List<AttendanceSession>();
     }
     
-    public void activate()
+    public string GetfullName()
     {
-        isActive = true;
+        return FirstName + " " + LastName;
+    }
+    
+    public void Activate()
+    {
+        IsActive = true;
     }
 
     public void deactivate()
