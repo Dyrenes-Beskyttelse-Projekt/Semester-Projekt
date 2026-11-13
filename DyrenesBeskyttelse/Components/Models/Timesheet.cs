@@ -9,4 +9,10 @@ public class Timesheet
     
     [Required]
     public List<AttendanceSession> Sessions { get; set; }
+
+    public Timesheet(long id, List<AttendanceSession> sessions)
+    {
+        this.Id = id;
+        this.Sessions = sessions;
+    }
 }

@@ -54,16 +54,11 @@ public class Volunteer
 
     public void deactivate()
     {
-        isActive = false;
-    }
-    
-    public List<AttendanceSession> getSessions()
-    {
-        return sessions;
+        IsActive = false;
     }
 
     public void addSession(AttendanceSession session)
     {
-        sessions.Add(session);
+        Sessions.Add(session);
     }
 }

@@ -14,6 +14,12 @@ public class AttendanceSession
     
     public long Duration { get; private set; } = 0;
 
+    public AttendanceSession(long id, DateTime sessionStart)
+    {
+        this.Id = id;   
+        this.SessionStart = sessionStart;
+    }
+
     public void RegisterEndTime()
     {
         if (SessionEnd.HasValue)
