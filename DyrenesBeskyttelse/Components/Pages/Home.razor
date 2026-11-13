@@ -1,7 +1,10 @@
 ﻿@page "/"
 @using DyrenesBeskyttelse.Components.Services
 
-@inject AdminService AdminService
+@* OwningComponentBase giver komponenten sit eget DI-scope. Scoped services, der hentes fra
+   ScopedServices, er derfor nye for denne komponent (ny AdminService og ny AppDbContext),
+   og de bliver ryddet op (disposed), når man forlader siden. Brug IKKE @inject til services. *@
+@inherits OwningComponentBase
 
 <PageTitle>Home</PageTitle>
 
@@ -11,8 +14,10 @@ Welcome to your new app.
 
 @code
 {
-    protected override void OnInitialized()
+    private AdminService AdminService => ScopedServices.GetRequiredService<AdminService>();
+
+    protected override async Task OnInitializedAsync()
     {
-        var users = AdminService.Admins;
+        var users = await AdminService.GetAdminsAsync();
     }
 }
