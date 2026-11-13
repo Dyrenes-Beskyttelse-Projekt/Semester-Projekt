@@ -1,10 +1,13 @@
 using DyrenesBeskyttelse.Components;
+using DyrenesBeskyttelse.Components.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddSingleton<AdminService>();
 
 var app = builder.Build();
 
