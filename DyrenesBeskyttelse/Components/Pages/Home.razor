@@ -11,7 +11,21 @@
 <h1>Hello, world!</h1>
 
 Welcome to your new app.
+<style>
+    .opret-knap {
+        display: inline-block;
+        background: #1f6fd0;
+        color: #fff;
+        padding: 11px 24px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .opret-knap:hover { background: #195cb0; color: #fff; }
+</style>
 
+@* TODO (admin-login): pak knappen ind i <AuthorizeView Roles="Admin"> når login er lavet *@
+<a href="/opret-frivillig" class="opret-knap">Opret frivillig</a>
 @code
 {
     private AdminService AdminService => ScopedServices.GetRequiredService<AdminService>();
