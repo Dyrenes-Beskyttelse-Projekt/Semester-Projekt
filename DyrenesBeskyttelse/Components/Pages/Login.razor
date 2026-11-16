@@ -9,31 +9,36 @@
 
 <PageTitle>Admin login</PageTitle>
 
-<div class="container" style="max-width: 400px;">
-    <h3 class="mb-3">Admin login</h3>
+<div class="login-wrapper">
+    <div class="login-card">
+        <h3>Admin login</h3>
+        <p class="subtitle">Log ind for at fortsætte</p>
 
-    <EditForm Model="_model" OnValidSubmit="HandleLoginAsync">
-        <DataAnnotationsValidator />
+        <EditForm Model="_model" OnValidSubmit="HandleLoginAsync">
+            <DataAnnotationsValidator />
 
-        <div class="mb-3">
-            <label class="form-label">E-mail</label>
-            <InputText class="form-control" @bind-Value="_model.Email" />
-            <ValidationMessage For="() => _model.Email" />
-        </div>
+            <div class="field">
+                <label for="email">E-mail</label>
+                <InputText id="email" @bind-Value="_model.Email" placeholder="navn@eksempel.dk" />
+                <ValidationMessage For="() => _model.Email" />
+            </div>
 
-        <div class="mb-3">
-            <label class="form-label">Kodeord</label>
-            <InputText type="password" class="form-control" @bind-Value="_model.Password" />
-            <ValidationMessage For="() => _model.Password" />
-        </div>
+            <div class="field">
+                <label for="password">Kodeord</label>
+                <InputText id="password" type="password" @bind-Value="_model.Password" />
+                <ValidationMessage For="() => _model.Password" />
+            </div>
 
-        @if (_error is not null)
-        {
-            <div class="alert alert-danger">@_error</div>
-        }
+            @if (_error is not null)
+            {
+                <div class="error-box">@_error</div>
+            }
 
-        <button type="submit" class="btn btn-primary w-100" disabled="@_busy">Log ind</button>
-    </EditForm>
+            <button type="submit" class="login-button" disabled="@_busy">
+                @(_busy ? "Logger ind..." : "Log ind")
+            </button>
+        </EditForm>
+    </div>
 </div>
 
 @code {
