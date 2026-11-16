@@ -1,5 +1,8 @@
-﻿@page "/"
+﻿@rendermode InteractiveServer
+@page "/"
+@using DyrenesBeskyttelse.Components.Models
 @using DyrenesBeskyttelse.Components.Services
+@using DyrenesBeskyttelse.Components.Shared
 
 @* OwningComponentBase giver komponenten sit eget DI-scope. Scoped services, der hentes fra
    ScopedServices, er derfor nye for denne komponent (ny AdminService og ny AppDbContext),
@@ -8,16 +11,61 @@
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+@* =================================== /TILFØJET AF MIG =================================== *@
+<button class="btn btn-lg btn-outline-primary" @onclick="OpenCheckInDialogue">@_selectedVolunteer.GetFullName()</button>
 
-Welcome to your new app.
+<Modal_CheckInDialogue IsOpen="_isCheckInDialogueOpen" Volunteer="@_selectedVolunteer"
+                       OnClickCancel="CloseCheckInDialogue"
+                       OnClickConfirm="ConfirmCheckInDialogueAsync">
+
+</Modal_CheckInDialogue>
+
+
+@* =================================== TILFØJET AF MIG/ =================================== *@
+
+
 
 @code
 {
     private AdminService AdminService => ScopedServices.GetRequiredService<AdminService>();
+    private VolunteerService VolunteerService => ScopedServices.GetRequiredService<VolunteerService>();
 
     protected override async Task OnInitializedAsync()
     {
         var users = await AdminService.GetAdminsAsync();
+
+        @* =================================== /TILFØJET AF MIG =================================== *@
+        var volunteers = await VolunteerService.GetVolunteersAsync();
     }
-}
+
+
+    // =================================== ON CLICK EVENT HER ===================================
+    private bool _isCheckInDialogueOpen = false;
+    private void OpenCheckInDialogue() => _isCheckInDialogueOpen = true;
+
+    private void CloseCheckInDialogue()
+    {
+        _isCheckInDialogueOpen = false;
+    }
+
+    private async Task ConfirmCheckInDialogueAsync()
+    {
+        try
+        {
+            await VolunteerService.CheckInAsync(_selectedVolunteer);
+            _isCheckInDialogueOpen = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+    }
+
+    private Volunteer _selectedVolunteer = new Volunteer(
+        "Rasmus",
+        "Palludan",
+        "Et sted i Sverige",
+        "AllYourBaseAreBelongToMe",
+        "6767676767");
+} 
+

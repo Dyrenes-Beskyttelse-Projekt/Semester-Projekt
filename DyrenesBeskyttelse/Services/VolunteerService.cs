@@ -19,4 +19,16 @@ public class VolunteerService
     {
         return await _db.Volunteers.ToListAsync();
     }
+    
+    // =================================== /TILFØJET AF Jones =================================== *@
+    public async Task CheckInAsync(Volunteer volunteer)
+    {
+        volunteer.CheckIn();
+        
+        //Check fordi min frivillig ikke findes i DB men kun memory
+        if (volunteer.Id == 0)
+            _db.Volunteers.Add(volunteer);
+
+        await _db.SaveChangesAsync();
+    }
 }

@@ -29,7 +29,7 @@ public class Volunteer
 
     [Required] public bool IsActive { get; set; } = false;
 
-    public List<AttendanceSession> Sessions { get; set; } = new List<AttendanceSession>();
+    public List<AttendanceSession> Sessions { get; set; }
 
     public Volunteer(string firstName, string lastName, string address, string email, string phoneNumber)
     {
@@ -38,11 +38,11 @@ public class Volunteer
         this.Address = address;
         this.Email = email;
         this.PhoneNumber = phoneNumber;
-        this.IsActive = false;
+        this.IsActive = true;
         this.Sessions = new List<AttendanceSession>();
     }
     
-    public string GetfullName()
+    public string GetFullName()
     {
         return FirstName + " " + LastName;
     }
@@ -52,13 +52,16 @@ public class Volunteer
         IsActive = true;
     }
 
-    public void deactivate()
+    public void Deactivate()
     {
         IsActive = false;
     }
-
-    public void addSession(AttendanceSession session)
+    
+    // =================================== /TILFØJET AF MIG =================================== *@
+    // public void CreateAttendance(long id, DateTime AttendanceStart);
+    
+    public void CheckIn()
     {
-        Sessions.Add(session);
+        Sessions.Add(new AttendanceSession(0, DateTime.Now) );
     }
 }

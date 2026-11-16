@@ -87,6 +87,7 @@ node_modules/
 
 # Frontend build outputs
 dist/
+!wwwroot/lib/bootstrap/dist/
 .next/
 .nuxt/
 
