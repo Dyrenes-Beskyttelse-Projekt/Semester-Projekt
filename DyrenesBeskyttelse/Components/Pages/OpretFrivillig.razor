@@ -1,9 +1,11 @@
 ﻿@page "/opret-frivillig"
-@* TODO (admin-login): tilføj @attribute [Authorize(Roles = "Admin")] når login er lavet *@
-@rendermode InteractiveServer
+@* US-4.3: Kun for administratorer. Uden prerendering, så login-tjekket i <AdminOnly> virker
+   (se Components/Shared/AdminOnly.razor). *@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits OwningComponentBase<AdminService>
 @using System.ComponentModel.DataAnnotations
 @using DyrenesBeskyttelse.Components.Services
+@using DyrenesBeskyttelse.Components.Shared
 
 <PageTitle>Opret frivillig</PageTitle>
 
@@ -46,6 +48,7 @@
     }
 </style>
 
+<AdminOnly>
 <div class="opret-side">
     <h1>Opret frivillig</h1>
     <p class="opret-undertekst">Udfyld oplysningerne herunder for at oprette en ny frivillig.</p>
@@ -95,6 +98,7 @@
         <div class="opret-succes">Frivillig oprettet!</div>
     }
 </div>
+</AdminOnly>
 
 @code {
     private OpretFrivilligFormular formular = new();

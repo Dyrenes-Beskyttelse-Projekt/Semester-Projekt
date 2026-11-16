@@ -58,7 +58,8 @@
         if (result.Success && result.Admin is not null)
         {
             Session.SignIn(result.Admin);
-            Nav.NavigateTo("/");
+            // Efter login sendes administratoren videre til administrationssiden (US-4).
+            Nav.NavigateTo("/opret-frivillig");
         }
         else
         {
