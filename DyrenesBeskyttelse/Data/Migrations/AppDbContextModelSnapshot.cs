@@ -69,6 +69,9 @@ namespace DyrenesBeskyttelse.Data.Migrations
                     b.Property<long>("Duration")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("ExpiredAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("SessionEnd")
                         .HasColumnType("TEXT");
 
