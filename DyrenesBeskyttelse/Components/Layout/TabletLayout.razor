@@ -1,0 +1,19 @@
+@inherits LayoutComponentBase
+
+@* Layout til tabletten: ingen menu, kun en simpel topbjælke, så de frivillige kun ser deres navne.
+   MainLayout (med menu) er urørt og kan bruges til administrationsdelen. *@
+
+<header class="tablet-header px-4">
+    <span class="brand">LogCat</span>
+    <span class="subtitle d-none d-md-inline">Dyrenes Beskyttelse Aarhus</span>
+</header>
+
+<main class="container py-4">
+    @Body
+</main>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Der er opstået en fejl.
+    <a href="." class="reload">Genindlæs</a>
+    <span class="dismiss">🗙</span>
+</div>

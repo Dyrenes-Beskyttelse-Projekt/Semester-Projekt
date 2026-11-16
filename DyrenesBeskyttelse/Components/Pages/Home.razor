@@ -1,23 +1,165 @@
 ﻿@page "/"
+@layout TabletLayout
+@* Interaktiv, så knapperne virker (onclick). Uden den er siden kun statisk HTML. *@
+@rendermode InteractiveServer
+@using DyrenesBeskyttelse.Components.Models
 @using DyrenesBeskyttelse.Components.Services
 
-@* OwningComponentBase giver komponenten sit eget DI-scope. Scoped services, der hentes fra
-   ScopedServices, er derfor nye for denne komponent (ny AdminService og ny AppDbContext),
+@* Tabletten på internatet (US-1, US-2, US-3). Intet login: Den frivillige trykker på sit navn
+   og bekræfter i en dialogboks.
+
+   OwningComponentBase giver komponenten sit eget DI-scope. Scoped services, der hentes fra
+   ScopedServices, er derfor nye for denne komponent (ny VolunteerService og ny AppDbContext),
    og de bliver ryddet op (disposed), når man forlader siden. Brug IKKE @inject til services. *@
 @inherits OwningComponentBase
 
-<PageTitle>Home</PageTitle>
+<PageTitle>LogCat · Tjek ind og ud</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1 class="text-center mb-4">Tryk på dit navn</h1>
 
-Welcome to your new app.
-
-@code
+@if (message != null)
 {
-    private AdminService AdminService => ScopedServices.GetRequiredService<AdminService>();
+    <div class="alert @(messageIsError ? "alert-danger" : "alert-success") fs-4 text-center">@message</div>
+}
+
+@* US-1.1: Listen med en knap pr. frivillig. Store knapper og stor skrift (idé 2 i det virtuelle kort). *@
+@if (volunteers == null)
+{
+    <p class="fs-4 text-center">Henter navne ...</p>
+}
+else if (volunteers.Count == 0)
+{
+    <p class="fs-4 text-center">Der er ingen aktive frivillige endnu.</p>
+}
+else
+{
+    <div class="name-grid">
+        @foreach (var volunteer in volunteers)
+        {
+            @* US-3.2: Er man tjekket ind, er knappen grøn og viser tidspunktet. *@
+            <button class="btn name-button @(volunteer.IsCheckedIn ? "btn-success" : "btn-outline-dark")"
+                    disabled="@busy"
+                    @onclick="() => Select(volunteer)">
+                @volunteer.FullName
+                @if (volunteer.CheckedInAt is DateTime checkedInAt)
+                {
+                    <span class="d-block fs-6">Tjekket ind kl. @checkedInAt.ToString("HH:mm")</span>
+                }
+            </button>
+        }
+    </div>
+}
+
+@* MIDLERTIDIG (Mig): Jonas laver bekræftelsesdialogen som komponent (US-2.1 og US-2.2).
+   Mandag: Erstat markup'en herunder med hans komponent, og behold tjek ud-delen (US-3.2):
+   Knappen "Tjek ud" vises kun, når man er tjekket ind, ellers vises "Tjek ind". *@
+@if (selected != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">@selected.FullName</h2>
+                </div>
+                <div class="modal-body">
+                    @if (selected.CanCheckOut && selected.CheckedInAt is DateTime since)
+                    {
+                        <p class="fs-3 mb-0">Du tjekkede ind kl. @since.ToString("HH:mm"). Vil du tjekke ud?</p>
+                    }
+                    else
+                    {
+                        <p class="fs-3 mb-0">Vil du tjekke ind?</p>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-lg btn-outline-secondary dialog-button" disabled="@busy"
+                            @onclick="Cancel">Fortryd</button>
+                    @if (selected.CanCheckOut)
+                    {
+                        <button class="btn btn-lg btn-warning dialog-button" disabled="@busy"
+                                @onclick="CheckOutAsync">Tjek ud</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-lg btn-success dialog-button" disabled="@busy"
+                                @onclick="CheckInAsync">Tjek ind</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private VolunteerService VolunteerService => ScopedServices.GetRequiredService<VolunteerService>();
+
+    private List<TabletVolunteer>? volunteers;
+    private TabletVolunteer? selected;
+    private string? message;
+    private bool messageIsError;
+
+    // Forhindrer dobbelttryk: AppDbContext kan kun udføre én forespørgsel ad gangen.
+    private bool busy;
 
     protected override async Task OnInitializedAsync()
     {
-        var users = await AdminService.GetAdminsAsync();
+        await LoadAsync();
+    }
+
+    // OVERLAP: GetTabletListAsync er Simons område (US-1.2). Hedder hans metode noget andet,
+    // rettes kaldet her mandag, når vi har valgt én udgave.
+    private async Task LoadAsync()
+    {
+        volunteers = await VolunteerService.GetTabletListAsync();
+    }
+
+    private void Select(TabletVolunteer volunteer)
+    {
+        message = null;
+        selected = volunteer;
+    }
+
+    private void Cancel()
+    {
+        selected = null;
+    }
+
+    private Task CheckInAsync() => ConfirmAsync(checkOut: false);
+
+    private Task CheckOutAsync() => ConfirmAsync(checkOut: true);
+
+    private async Task ConfirmAsync(bool checkOut)
+    {
+        if (selected == null || busy)
+        {
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            var volunteer = selected;
+            // OVERLAP: CheckInAsync og CheckOutAsync er Jonas' område (US-2.3 og US-3.3).
+            // Hedder hans metoder noget andet, rettes kaldene her mandag.
+            bool ok = checkOut
+                ? await VolunteerService.CheckOutAsync(volunteer.Id)
+                : await VolunteerService.CheckInAsync(volunteer.Id);
+
+            // Tydelig kvittering (US-2). Fejler det, er listen ikke opdateret, fx fordi en anden
+            // tablet har tjekket personen ind eller ud i mellemtiden.
+            messageIsError = !ok;
+            message = ok
+                ? $"{volunteer.FullName}: Du er tjekket {(checkOut ? "ud" : "ind")} kl. {DateTime.Now:HH:mm}."
+                : "Det lykkedes ikke. Listen er opdateret, så prøv igen.";
+
+            selected = null;
+
+            // Henter listen igen, så status og nye frivillige altid er opdateret.
+            await LoadAsync();
+        }
+        finally
+        {
+            busy = false;
+        }
     }
 }
