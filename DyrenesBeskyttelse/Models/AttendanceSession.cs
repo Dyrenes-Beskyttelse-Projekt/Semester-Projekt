@@ -12,6 +12,8 @@ public class AttendanceSession
     
     public DateTime? SessionEnd { get; set; }
     
+    public DateTime ExpiredAt { get; set; } = DateTime.UtcNow.AddDays(1);
+    
     public long Duration { get; private set; } = 0;
 
     public AttendanceSession(long id, DateTime sessionStart)

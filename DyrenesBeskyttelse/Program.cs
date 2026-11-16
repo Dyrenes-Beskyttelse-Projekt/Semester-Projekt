@@ -32,7 +32,13 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
+
+    var volunteerService = scope.ServiceProvider
+        .GetRequiredService<VolunteerService>();
+
+    await volunteerService.InitializeService();
 }
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
