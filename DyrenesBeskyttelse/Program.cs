@@ -43,6 +43,10 @@ using (var scope = app.Services.CreateScope())
         await adminService.CreateAdminAsync("Admin", "Admin", "Ukendt vej 1",
             "admin@dyrenesbeskyttelse.dk", "12345678", "Admin123!");
     }
+    var volunteerService = scope.ServiceProvider
+        .GetRequiredService<VolunteerService>();
+
+    await volunteerService.InitializeService();
 }
 
 // Configure the HTTP request pipeline.
