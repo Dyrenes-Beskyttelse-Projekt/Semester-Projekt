@@ -1,0 +1,58 @@
+@using DyrenesBeskyttelse.Components.Models
+
+@* Bekræftelsesdialog til tabletten (Jonas: US-2.1 og US-2.2).
+   Data sendes ned via [Parameter], og klik sendes op til siden via EventCallback.
+
+   Tilpasset ved sammenlægningen med Julies tablet-side (US-1.1, US-1.3 og US-3.2):
+   - Volunteer er en TabletVolunteer (kun id, navn og tidspunkt for tjek ind), så dialogen
+     aldrig kender kontaktoplysninger (US-1.3).
+   - Dialogen bruges både til tjek ind og tjek ud: Er den frivillige tjekket ind, spørger den
+     "Vil du tjekke ud?", og knappen hedder "Tjek ud" (US-3.2).
+   - Busy slår knapperne fra, mens der gemmes, så man ikke kan trykke to gange.
+   - Store knapper og stor skrift til tabletten (idé 2 i det virtuelle kort). *@
+
+@if (IsOpen && Volunteer != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">
+                        @Volunteer.FullName
+                    </h2>
+                    <button type="button" class="btn-close" aria-label="Luk" disabled="@Busy" @onclick="OnClickCancel"></button>
+                </div>
+                <div class="modal-body fs-3">
+                    @if (Volunteer.CanCheckOut && Volunteer.CheckedInAt is DateTime since)
+                    {
+                        <p class="mb-0">Du tjekkede ind kl. @since.ToString("HH:mm"). Vil du tjekke ud?</p>
+                    }
+                    else
+                    {
+                        <p class="mb-0">Vil du tjekke ind?</p>
+                    }
+                </div>
+                <div class="modal-footer d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="button" class="btn btn-lg btn-danger" disabled="@Busy" @onclick="OnClickCancel">Fortryd</button>
+                    @if (Volunteer.CanCheckOut)
+                    {
+                        <button type="button" class="btn btn-lg btn-warning" disabled="@Busy" @onclick="OnClickConfirm">Tjek ud</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-lg btn-success" disabled="@Busy" @onclick="OnClickConfirm">Tjek ind</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public TabletVolunteer? Volunteer { get; set; }
+    [Parameter] public bool Busy { get; set; }
+
+    [Parameter] [EditorRequired] public EventCallback OnClickCancel { get; set; }
+    [Parameter] [EditorRequired] public EventCallback OnClickConfirm { get; set; }
+}

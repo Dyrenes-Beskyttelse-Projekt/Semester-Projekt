@@ -14,7 +14,6 @@
         <PrivateAssets>all</PrivateAssets>
       </PackageReference>
       <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
-      <PackageReference Include="xunit.v3" Version="4.0.3" />
     </ItemGroup>
 
     <!-- Unit tests ligger i et separat projekt (DyrenesBeskyttelse.Tests) med xUnit v3. -->

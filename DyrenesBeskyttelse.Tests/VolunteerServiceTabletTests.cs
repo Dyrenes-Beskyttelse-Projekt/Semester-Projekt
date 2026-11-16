@@ -38,9 +38,10 @@ public class VolunteerServiceTabletTests : IDisposable
     private long AddVolunteer(string firstName, string lastName, bool isActive = true)
     {
         var volunteer = new Volunteer(firstName, lastName, "Testvej 1", $"{firstName}@test.dk", "12345678");
-        if (isActive)
+        // Nye frivillige er aktive fra start, så kun de inaktive skal ændres.
+        if (!isActive)
         {
-            volunteer.Activate();
+            volunteer.Deactivate();
         }
 
         _db.Volunteers.Add(volunteer);

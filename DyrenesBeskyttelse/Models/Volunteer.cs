@@ -42,23 +42,25 @@ public class Volunteer
         this.Sessions = new List<AttendanceSession>();
     }
     
-    public string GetfullName()
+    public string GetFullName()
     {
         return FirstName + " " + LastName;
     }
-    
+
     public void Activate()
     {
         IsActive = true;
     }
 
-    public void deactivate()
+    public void Deactivate()
     {
         IsActive = false;
     }
 
-    public void addSession(AttendanceSession session)
+    // Jonas (US-2.3): Opretter en ny registrering af fremmøde med tidspunktet for tjek ind.
+    // Erstatter addSession(). Om tjek ind er tilladt, tjekker VolunteerService.CheckInAsync.
+    public void CheckIn()
     {
-        Sessions.Add(session);
+        Sessions.Add(new AttendanceSession(0, DateTime.Now));
     }
 }

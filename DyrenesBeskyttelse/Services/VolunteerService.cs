@@ -57,8 +57,13 @@ public class VolunteerService
         return TabletVolunteer.SortByName(volunteers);
     }
 
-    // OVERLAP med Jonas' US-2.3. Lavet, så knappen "Tjek ind" i dialogen kan afprøves,
-    // og så der findes frivillige, der er tjekket ind, når tjek ud-GUI'en (US-3.2) skal testes.
+    // BESLUTTET af gruppen d. 16/11 (Jonas fraværende, orienteres bagefter):
+    // Én metode til tjek ind (US-2.3). Selve registreringen sker med Jonas' Volunteer.CheckIn().
+    // Jonas' CheckInAsync(Volunteer) er slettet, fordi den
+    //   - ikke tjekkede, om man allerede er tjekket ind (acceptkriterie i US-2),
+    //   - gemte en ny frivillig, hvis Id var 0 (kun brugt til hans test),
+    //   - krævede et helt Volunteer-objekt med kontaktoplysninger, som tabletten ikke må have (US-1.3).
+    // Denne metode tager kun id'et og svarer true/false, som siden bruger til kvitteringen.
     // US-2: Kun muligt, når man ikke allerede er tjekket ind i dag.
     public async Task<bool> CheckInAsync(long volunteerId)
     {
@@ -73,7 +78,7 @@ public class VolunteerService
             return false;
         }
 
-        volunteer.addSession(new AttendanceSession(0, DateTime.Now));
+        volunteer.CheckIn();
         await _db.SaveChangesAsync();
         return true;
     }
