@@ -27,7 +27,7 @@ public class Volunteer
     [StringLength(100)]
     public string PhoneNumber { get; set; }
 
-    [Required] public bool IsActive { get; set; } = false;
+    [Required] public bool IsActive { get; set; } = true;
 
     public List<AttendanceSession> Sessions { get; set; } = new List<AttendanceSession>();
 
@@ -38,7 +38,7 @@ public class Volunteer
         this.Address = address;
         this.Email = email;
         this.PhoneNumber = phoneNumber;
-        this.IsActive = false;
+        this.IsActive = true;
         this.Sessions = new List<AttendanceSession>();
     }
     

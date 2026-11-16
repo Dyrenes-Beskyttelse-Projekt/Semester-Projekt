@@ -3,6 +3,8 @@ using DyrenesBeskyttelse.Components.Services;
 using DyrenesBeskyttelse.Data;
 using DyrenesBeskyttelse.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Components.Authorization; 
+
 
 var builder = WebApplication.CreateBuilder(args);
 
