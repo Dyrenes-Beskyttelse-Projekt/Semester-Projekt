@@ -15,4 +15,15 @@ public class AppDbContext : DbContext
 
     // Timesheet og TimesheetReport er ikke tabeller. De kan beregnes ud fra AttendanceSessions,
     // når der skal laves en rapport.
+    
+    
+    //Unikt E-mail for Admin
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Admin>()
+            .HasIndex(a => a.Email)
+            .IsUnique();
+    }
 }
