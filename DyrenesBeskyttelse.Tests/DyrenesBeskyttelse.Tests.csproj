@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Unit tests med xUnit v3 som beskrevet i https://xunit.net/docs/getting-started/v3/getting-started
+       (skabelonen "dotnet new xunit3"). Et v3-testprojekt er et program (OutputType Exe), så testene
+       kan køres med "dotnet test" eller "dotnet run", og Rider finder dem i Unit Tests-vinduet. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" Version="4.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DyrenesBeskyttelse\DyrenesBeskyttelse.csproj" />
+  </ItemGroup>
+
+</Project>

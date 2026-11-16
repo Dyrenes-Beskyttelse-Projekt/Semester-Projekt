@@ -87,6 +87,9 @@ node_modules/
 
 # Frontend build outputs
 dist/
+# Undtagelse: Bootstrap fra Blazor-skabelonen ligger i wwwroot/lib/bootstrap/dist og skal med i Git,
+# ellers mangler App.razor bootstrap.min.css, og siderne vises uden layout.
+!wwwroot/lib/**/dist/
 .next/
 .nuxt/
 

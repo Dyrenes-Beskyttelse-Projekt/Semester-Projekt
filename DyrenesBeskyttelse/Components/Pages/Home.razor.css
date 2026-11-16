@@ -1,0 +1,17 @@
+/* Store knapper og tydelig skrift, så tabletten er nem at bruge, også for ældre frivillige
+   (idé 2 i det virtuelle kort). */
+.name-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: 1rem;
+}
+
+.name-button {
+    min-height: 5rem;
+    font-size: 1.5rem;
+    border-width: 2px;
+}
+
+.dialog-button {
+    min-width: 9rem;
+}
