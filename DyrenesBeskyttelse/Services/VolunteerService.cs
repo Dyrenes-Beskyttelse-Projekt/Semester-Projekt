@@ -101,4 +101,30 @@ public class VolunteerService
         await _db.SaveChangesAsync();
         return true;
     }
+    
+    // Initialization. Simons automatiske check ud, hvis man har glemt at tjekke ud. 
+    public async Task InitializeService(
+        CancellationToken cancellationToken = default)
+    {
+        await CleanupSessions(cancellationToken);
+    }
+
+    // Session cleanup
+    private async Task CleanupSessions(
+        CancellationToken cancellationToken)
+    {
+        DateTime now = DateTime.UtcNow;
+
+        var expiredSessions = await _db.AttendanceSessions
+            .Where(ses => ses.SessionEnd == null &&
+                          ses.ExpiredAt <= now)
+            .ToListAsync(cancellationToken);
+
+        foreach (var session in expiredSessions)
+        {
+            session.RegisterEndTime();
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+    }
 }
