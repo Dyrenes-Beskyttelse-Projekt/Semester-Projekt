@@ -63,4 +63,14 @@ public class Volunteer
     {
         Sessions.Add(new AttendanceSession(0, DateTime.Now));
     }
+    //Saed (US-5.5):  
+    public void UpdateDetails(string firstName, string lastName, string address,
+        string email, string phoneNumber)
+    {
+        FirstName = firstName;
+        LastName = lastName;
+        Address = address;
+        Email = email;
+        PhoneNumber = phoneNumber;
+    }
 }

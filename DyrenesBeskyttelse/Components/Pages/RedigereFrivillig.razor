@@ -1,0 +1,167 @@
+﻿@page "/rediger-frivillig/{Id:long}"
+@* TODO (admin-login): tilføj @attribute [Authorize(Roles = "Admin")] når login er lavet *@
+@rendermode InteractiveServer
+@inherits OwningComponentBase<AdminService>
+@using System.ComponentModel.DataAnnotations
+@using DyrenesBeskyttelse.Components.Services
+
+<PageTitle>Rediger frivillig</PageTitle>
+
+<style>
+    .opret-side { max-width: 720px; padding: 8px 4px 40px 4px; }
+    .opret-side h1 { font-size: 2.2rem; margin-bottom: 6px; }
+    .opret-undertekst { color: #6c757d; margin-bottom: 32px; }
+
+    .opret-felt { display: flex; flex-direction: column; margin-bottom: 26px; }
+    .opret-felt label { font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; }
+    .opret-felt input {
+        padding: 11px 14px;
+        font-size: 1rem;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        background: #fff;
+    }
+    .opret-felt input:focus { outline: none; border-color: #1f6fd0; box-shadow: 0 0 0 3px rgba(31, 111, 208, 0.18); }
+
+    .opret-raekke { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); column-gap: 24px; }
+
+    .opret-fejl { color: #dc3545; font-size: 0.85rem; margin-top: 6px; }
+
+    .opret-knapper { display: flex; gap: 14px; margin-top: 36px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+    .knap-primaer {
+        background: #1f6fd0; color: #fff; border: 1px solid #1f6fd0;
+        padding: 11px 26px; border-radius: 6px; font-size: 1rem; font-weight: 500; cursor: pointer;
+    }
+    .knap-primaer:hover { background: #195cb0; }
+    .knap-sekundaer {
+        background: #fff; color: #495057; border: 1px solid #ced4da;
+        padding: 11px 26px; border-radius: 6px; font-size: 1rem; text-decoration: none;
+    }
+    .knap-sekundaer:hover { background: #f1f3f5; color: #212529; }
+
+    .opret-succes {
+        margin-top: 24px; padding: 14px 18px; border-radius: 6px;
+        background: #e6f4ea; color: #1e6b36; border: 1px solid #b7dfc4;
+    }
+</style>
+
+<div class="opret-side">
+    <h1>Rediger frivillig</h1>
+    <p class="opret-undertekst">Ret oplysningerne herunder og tryk på gem.</p>
+
+    @if (ikkeFundet)
+    {
+        <p class="opret-fejl">Frivillig blev ikke fundet.</p>
+    }
+    else if (formular == null)
+    {
+        <p>Henter frivillig...</p>
+    }
+    else
+    {
+        <EditForm Model="formular" OnValidSubmit="Gem" FormName="redigerFrivillig">
+            <DataAnnotationsValidator />
+
+            <div class="opret-raekke">
+                <div class="opret-felt">
+                    <label>Fornavn</label>
+                    <InputText @bind-Value="formular.FirstName" />
+                    <ValidationMessage For="() => formular.FirstName" class="opret-fejl" />
+                </div>
+                <div class="opret-felt">
+                    <label>Efternavn</label>
+                    <InputText @bind-Value="formular.LastName" />
+                    <ValidationMessage For="() => formular.LastName" class="opret-fejl" />
+                </div>
+            </div>
+
+            <div class="opret-felt">
+                <label>Adresse</label>
+                <InputText @bind-Value="formular.Address" />
+                <ValidationMessage For="() => formular.Address" class="opret-fejl" />
+            </div>
+
+            <div class="opret-felt">
+                <label>Email</label>
+                <InputText @bind-Value="formular.Email" />
+                <ValidationMessage For="() => formular.Email" class="opret-fejl" />
+            </div>
+
+            <div class="opret-felt">
+                <label>Mobilnummer</label>
+                <InputText @bind-Value="formular.PhoneNumber" />
+                <ValidationMessage For="() => formular.PhoneNumber" class="opret-fejl" />
+            </div>
+
+            <div class="opret-knapper">
+                <button type="submit" class="knap-primaer">Gem ændringer</button>
+                <a href="/" class="knap-sekundaer">Annuller</a>
+            </div>
+        </EditForm>
+    }
+
+    @if (gemt)
+    {
+        <div class="opret-succes">Frivillig opdateret!</div>
+    }
+</div>
+
+@code {
+    [Parameter] public long Id { get; set; }
+
+    private RedigerFormular? formular;
+    private bool gemt;
+    private bool ikkeFundet;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var v = await Service.GetVolunteerByIdAsync(Id);
+        if (v == null)
+        {
+            ikkeFundet = true;
+            return;
+        }
+
+        // Forudfyld formularen med de nuværende oplysninger
+        formular = new RedigerFormular
+        {
+            FirstName = v.FirstName,
+            LastName = v.LastName,
+            Address = v.Address,
+            Email = v.Email,
+            PhoneNumber = v.PhoneNumber
+        };
+    }
+
+    private async Task Gem()
+    {
+        gemt = await Service.UpdateVolunteerAsync(Id, formular!.FirstName, formular.LastName,
+            formular.Address, formular.Email, formular.PhoneNumber);
+    }
+
+    // Hjælpeklasse kun til formularen
+    private class RedigerFormular
+    {
+        [Required(ErrorMessage = "Fornavn skal udfyldes")]
+        [StringLength(100)]
+        public string FirstName { get; set; } = "";
+
+        [Required(ErrorMessage = "Efternavn skal udfyldes")]
+        [StringLength(100)]
+        public string LastName { get; set; } = "";
+
+        [Required(ErrorMessage = "Adresse skal udfyldes")]
+        [StringLength(100)]
+        public string Address { get; set; } = "";
+
+        [Required(ErrorMessage = "Email skal udfyldes")]
+        [EmailAddress(ErrorMessage = "Ugyldig email")]
+        [StringLength(100)]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "Mobilnummer skal udfyldes")]
+        [Phone(ErrorMessage = "Ugyldigt mobilnummer")]
+        [StringLength(100)]
+        public string PhoneNumber { get; set; } = "";
+    }
+}
