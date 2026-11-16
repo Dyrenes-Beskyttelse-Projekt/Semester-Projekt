@@ -54,6 +54,9 @@ namespace DyrenesBeskyttelse.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Email")
+                        .IsUnique();
+
                     b.ToTable("Admins");
                 });
 

@@ -1,6 +1,7 @@
 using DyrenesBeskyttelse.Components;
 using DyrenesBeskyttelse.Components.Services;
 using DyrenesBeskyttelse.Data;
+using DyrenesBeskyttelse.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,22 +24,26 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Data deles mellem brugerne via databasen.
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<VolunteerService>();
+builder.Services.AddScoped<AdminSession>();
 
 var app = builder.Build();
 
 // Opretter databasefilen og tabellerne ud fra migrationerne (Data/Migrations), hvis de mangler.
 // AppDbContext er scoped, så vi laver et scope for at kunne hente den her ved opstart.
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
 
-    var volunteerService = scope.ServiceProvider
-        .GetRequiredService<VolunteerService>();
-
-    await volunteerService.InitializeService();
+    // Opret en første admin, hvis der ingen er
+    if (!await db.Admins.AnyAsync())
+    {
+        var adminService = scope.ServiceProvider.GetRequiredService<AdminService>();
+        await adminService.CreateAdminAsync("Admin", "Admin", "Ukendt vej 1",
+            "admin@dyrenesbeskyttelse.dk", "12345678", "Admin123!");
+    }
 }
-
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

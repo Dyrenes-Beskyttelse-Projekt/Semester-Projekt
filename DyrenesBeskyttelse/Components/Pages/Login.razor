@@ -1,0 +1,80 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+@inherits OwningComponentBase
+@using System.ComponentModel.DataAnnotations
+@using DyrenesBeskyttelse.Components.Services
+@using DyrenesBeskyttelse.Services
+@inject AdminSession Session
+@inject NavigationManager Nav
+
+<PageTitle>Admin login</PageTitle>
+
+<div class="login-wrapper">
+    <div class="login-card">
+        <h3>Admin login</h3>
+        <p class="subtitle">Log ind for at fortsætte</p>
+
+        <EditForm Model="_model" OnValidSubmit="HandleLoginAsync">
+            <DataAnnotationsValidator />
+
+            <div class="field">
+                <label for="email">E-mail</label>
+                <InputText id="email" @bind-Value="_model.Email" placeholder="navn@eksempel.dk" />
+                <ValidationMessage For="() => _model.Email" />
+            </div>
+
+            <div class="field">
+                <label for="password">Kodeord</label>
+                <InputText id="password" type="password" @bind-Value="_model.Password" />
+                <ValidationMessage For="() => _model.Password" />
+            </div>
+
+            @if (_error is not null)
+            {
+                <div class="error-box">@_error</div>
+            }
+
+            <button type="submit" class="login-button" disabled="@_busy">
+                @(_busy ? "Logger ind..." : "Log ind")
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private AdminService AdminService => ScopedServices.GetRequiredService<AdminService>();
+
+    private readonly LoginModel _model = new();
+    private string? _error;
+    private bool _busy;
+
+    private async Task HandleLoginAsync()
+    {
+        _busy = true;
+        _error = null;
+
+        var result = await AdminService.LoginAsync(_model.Email, _model.Password);
+
+        if (result.Success && result.Admin is not null)
+        {
+            Session.SignIn(result.Admin);
+            Nav.NavigateTo("/");
+        }
+        else
+        {
+            _error = result.ErrorMessage;
+            _model.Password = string.Empty;
+        }
+
+        _busy = false;
+    }
+
+    private class LoginModel
+    {
+        [Required(ErrorMessage = "Indtast e-mail")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Indtast kodeord")]
+        public string Password { get; set; } = string.Empty;
+    }
+}
