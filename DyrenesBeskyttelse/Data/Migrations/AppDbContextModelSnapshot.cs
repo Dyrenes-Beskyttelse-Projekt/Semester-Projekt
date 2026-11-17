@@ -122,6 +122,9 @@ namespace DyrenesBeskyttelse.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("StartedBefore2026")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.ToTable("Volunteers");

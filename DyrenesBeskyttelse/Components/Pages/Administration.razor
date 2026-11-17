@@ -1,0 +1,151 @@
+@page "/admin"
+@* US-7.0 (Julie): Administrationens forside. Login fører hertil (se Login.razor).
+   Siden viser alle frivillige og en menu til de andre administrationssider.
+
+   Kun for administratorer: Indholdet er pakket ind i <AdminOnly> (US-4.3), og siden kører uden
+   prerendering, så login-tjekket virker, også hvis man skriver adressen direkte.
+
+   OwningComponentBase<AdminService> giver siden sin egen AdminService og AppDbContext (eget DI-scope),
+   som ryddes op, når man forlader siden. AdminService hentes via "Service". *@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits OwningComponentBase<AdminService>
+@using DyrenesBeskyttelse.Components.Models
+@using DyrenesBeskyttelse.Components.Services
+@using DyrenesBeskyttelse.Components.Shared
+@using DyrenesBeskyttelse.Services
+@inject AdminSession Session
+
+<PageTitle>Administration</PageTitle>
+
+@* Farverne er de samme som i tablettens topbjælke (TabletLayout.razor.css), så administrationen
+   ligner forsiden: creme (#F5F0E6), Dyrenes Beskyttelses røde farve (#7E0D00) og sort tekst. *@
+<style>
+    .admin-side {
+        --db-roed: #7E0D00;
+        --db-roed-moerk: #5E0A00;
+        --db-creme: #F5F0E6;
+        --db-sort: #1a1a1a;
+        color: var(--db-sort);
+        padding: 0 0 40px 0;
+    }
+
+    /* Toppen ligner tablettens topbjælke: creme baggrund, rød titel, sort undertekst */
+    .admin-top {
+        background: var(--db-creme);
+        border-left: 6px solid var(--db-roed);
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+    }
+    .admin-top h1 { color: var(--db-roed); font-weight: bold; font-size: 2.2rem; margin: 0 0 4px 0; }
+    .admin-top p { color: var(--db-sort); margin: 0; }
+
+    /* Menuen: én rød knap pr. administrationsside */
+    .admin-menu { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+    .admin-menu a {
+        background: var(--db-roed); color: #fff; border: 2px solid var(--db-roed);
+        padding: 11px 22px; border-radius: 6px; font-size: 1rem; font-weight: 600; text-decoration: none;
+    }
+    .admin-menu a:hover { background: var(--db-roed-moerk); border-color: var(--db-roed-moerk); }
+
+    .admin-antal { font-weight: 600; margin-bottom: 10px; }
+
+    /* Tabellen: creme overskriftsrække med rød streg, creme striber */
+    .admin-tabel {
+        --bs-table-striped-bg: rgba(245, 240, 230, 0.6);
+        border: 1px solid #e3dccd;
+    }
+    .admin-tabel thead th {
+        background: var(--db-creme);
+        color: var(--db-roed);
+        border-bottom: 3px solid var(--db-roed);
+        white-space: nowrap;
+    }
+    .admin-tabel td { color: var(--db-sort); }
+
+    /* Status som små mærker: aktiv = grøn (samme grøn som "Tjek ind" på tabletten),
+       inaktiv = Dyrenes Beskyttelses røde farve */
+    .status { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
+    .status-aktiv { background: #198754; color: #fff; }
+    .status-inaktiv { background: var(--db-roed); color: #fff; }
+    .admin-tabel .raekke-inaktiv td { color: #6c757d; }
+</style>
+
+<AdminOnly>
+<div class="admin-side">
+    <div class="admin-top">
+        <h1>Administration</h1>
+        <p>Velkommen @Session.FullName. Her er alle frivillige.</p>
+    </div>
+
+    @* Menuen til de andre administrationssider. Når en ny side er lavet, tilføjes en knap her:
+         - Månedsrapport     (US-8.1)
+         - Registrér fremmøde fra papirliste   (US-10.1, samme navn som i vejledningen) *@
+    <nav class="admin-menu">
+        <a href="/opret-frivillig">Opret frivillig</a>
+    </nav>
+
+    @if (volunteers == null)
+    {
+        <p>Henter frivillige ...</p>
+    }
+    else if (volunteers.Count == 0)
+    {
+        <p>Der er ingen frivillige endnu. Tryk på "Opret frivillig" for at oprette den første.</p>
+    }
+    else
+    {
+        <p class="admin-antal">@volunteers.Count frivillige, heraf @volunteers.Count(v => v.IsActive) aktive.</p>
+
+        <table class="table table-striped align-middle admin-tabel">
+            <thead>
+                <tr>
+                    <th>Navn</th>
+                    <th>Telefon</th>
+                    <th>E-mail</th>
+                    <th>Adresse</th>
+                    <th>Aktivitetsregel</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var volunteer in volunteers)
+                {
+                    <tr class="@(volunteer.IsActive ? "" : "raekke-inaktiv")">
+                        <td>@volunteer.GetFullName()</td>
+                        <td>@volunteer.PhoneNumber</td>
+                        <td>@volunteer.Email</td>
+                        <td>@volunteer.Address</td>
+                        @* US-6.1: Reglen afhænger af, om den frivillige er startet før 2026. *@
+                        <td>@volunteer.GetActivityRuleText()</td>
+                        <td>
+                            @if (volunteer.IsActive)
+                            {
+                                <span class="status status-aktiv">Aktiv</span>
+                            }
+                            else
+                            {
+                                <span class="status status-inaktiv">Inaktiv</span>
+                            }
+                            @* Her kan knapperne "Gør inaktiv" / "Gør aktiv" (US-7.1) sættes ind. *@
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+</AdminOnly>
+
+@code {
+    private List<Volunteer>? volunteers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Listen hentes kun, hvis man er logget ind. Ellers sender <AdminOnly> én til /login.
+        if (Session.IsLoggedIn)
+        {
+            volunteers = await Service.GetAllVolunteersAsync();
+        }
+    }
+}

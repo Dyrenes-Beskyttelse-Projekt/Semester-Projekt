@@ -22,9 +22,22 @@ public class AdminService
         return await _db.Admins.ToListAsync();
     }
 
-    public async Task CreateVolunteerAsync(string firstName, string lastName, string address, string email, string phoneNumber)
+    // Julie (US-7.0): Alle frivillige, både aktive og inaktive, til administrationens forside.
+    // Sorteres efter navn med dansk alfabet (Æ, Ø, Å til sidst). Det sker efter ToListAsync, fordi
+    // SQLite ikke kender den danske rækkefølge. Samme fremgangsmåde som TabletVolunteer.SortByName.
+    public async Task<List<Volunteer>> GetAllVolunteersAsync()
     {
-        _db.Volunteers.Add(new Volunteer(firstName, lastName, address, email, phoneNumber));
+        var volunteers = await _db.Volunteers.ToListAsync();
+        var danish = StringComparer.Create(new System.Globalization.CultureInfo("da-DK"), true);
+        return volunteers.OrderBy(v => v.GetFullName(), danish).ToList();
+    }
+
+    // US-6.2 (Julie): startedBefore2026 kommer fra afkrydsningsfeltet "Startet før 2026" i formularen.
+    // Parameteren er valgfri (standard false), så eksisterende kald og tests stadig virker.
+    public async Task CreateVolunteerAsync(string firstName, string lastName, string address, string email,
+        string phoneNumber, bool startedBefore2026 = false)
+    {
+        _db.Volunteers.Add(new Volunteer(firstName, lastName, address, email, phoneNumber, startedBefore2026));
 
         // Først her bliver den frivillige skrevet til databasen (INSERT).
         await _db.SaveChangesAsync();

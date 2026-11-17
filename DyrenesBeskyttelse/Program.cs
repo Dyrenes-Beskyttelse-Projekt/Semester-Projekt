@@ -45,6 +45,10 @@ using (var scope = app.Services.CreateScope())
         await adminService.CreateAdminAsync("Admin", "Admin", "Ukendt vej 1",
             "admin@dyrenesbeskyttelse.dk", "12345678", "Admin123!");
     }
+
+    // Testfrivillige, så listen er længere, når programmet åbnes (se Data/TestData.cs).
+    await TestData.SeedVolunteersAsync(db);
+    await TestData.SeedAttendanceAsync(db);
     var volunteerService = scope.ServiceProvider
         .GetRequiredService<VolunteerService>();
 
