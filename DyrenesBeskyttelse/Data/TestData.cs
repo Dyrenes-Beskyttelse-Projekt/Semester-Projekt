@@ -1,4 +1,5 @@
 using DyrenesBeskyttelse.Components.Models;
+using DyrenesBeskyttelse.Components.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace DyrenesBeskyttelse.Data;
@@ -14,6 +15,39 @@ namespace DyrenesBeskyttelse.Data;
 // programmet startes igen, og frivillige, man selv har oprettet, bliver ikke rørt.
 public static class TestData
 {
+    // Julie (US-4.5, acceptkriterie i US-4: "Lederen og frivilligkoordinatoren har hver sin bruger, som vi opretter"):
+    // Testbrugere til lederen og frivilligkoordinatoren. Det er TESTkodeord til udvikling og afprøvning.
+    // De rigtige brugere med rigtige navne, e-mails og kodeord oprettes ved overdragelsen til
+    // Dyrenes Beskyttelse. Rigtige kodeord må aldrig stå her, fordi koden ligger på GitHub.
+    private static readonly (string FirstName, string LastName, string Email, string Password)[] Admins =
+    {
+        ("Leder", "Testbruger", "leder@dyrenesbeskyttelse.dk", "Leder123!"),
+        ("Frivilligkoordinator", "Testbruger", "frivilligkoordinator@dyrenesbeskyttelse.dk", "Koordinator123!"),
+    };
+
+    // Oprettes kun, hvis der ikke allerede findes en administrator med den e-mail.
+    // CreateAdminAsync hasher kodeordet med BCrypt, ligesom når testadministratoren oprettes.
+    public static async Task SeedAdminsAsync(AppDbContext db, AdminService adminService)
+    {
+        // Den gamle testadministrator "Admin" er erstattet af lederen og frivilligkoordinatoren.
+        // Findes den stadig i ens database (fra før 17/11), slettes den her.
+        var oldAdmin = await db.Admins.FirstOrDefaultAsync(a => a.Email == "admin@dyrenesbeskyttelse.dk");
+        if (oldAdmin != null)
+        {
+            db.Admins.Remove(oldAdmin);
+            await db.SaveChangesAsync();
+        }
+
+        foreach (var (firstName, lastName, email, password) in Admins)
+        {
+            if (!await db.Admins.AnyAsync(a => a.Email == email))
+            {
+                await adminService.CreateAdminAsync(firstName, lastName, "Dyrenes Beskyttelse, Tranbjerg",
+                    email, "12345678", password);
+            }
+        }
+    }
+
     // (fornavn, efternavn, startet før 2026). Blandingen af true/false gør, at begge
     // aktivitetsregler kan afprøves i månedsrapporten (US-8 og US-9).
     private static readonly (string FirstName, string LastName, bool StartedBefore2026)[] Volunteers =
