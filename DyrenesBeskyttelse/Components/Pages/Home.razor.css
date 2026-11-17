@@ -12,3 +12,17 @@
     border-width: 2px;
 }
 
+
+/* iPad/touchskærme: "klæbende hover". Når dialogen lukker, tror iPad'en, at fingeren stadig
+   "holder musen over" den navneknap, der lå under knappen "Tjek ind", og viser knappens
+   hover-farve (sort for de hvide knapper). Så ser det ud, som om en tilfældig frivillig er valgt.
+   På skærme uden mus (hover: none) får knapperne derfor samme farve ved hover som normalt.
+   På en pc med mus virker hover som før. */
+@media (hover: none) {
+    .name-button.btn-outline-dark,
+    .name-button.btn-success {
+        --bs-btn-hover-color: var(--bs-btn-color);
+        --bs-btn-hover-bg: var(--bs-btn-bg);
+        --bs-btn-hover-border-color: var(--bs-btn-border-color);
+    }
+}
