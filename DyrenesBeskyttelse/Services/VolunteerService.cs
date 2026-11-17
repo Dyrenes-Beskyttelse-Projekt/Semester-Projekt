@@ -2,7 +2,7 @@
 using DyrenesBeskyttelse.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace DyrenesBeskyttelse.Components.Services;
+namespace DyrenesBeskyttelse.Services;
 
 public class VolunteerService
 {
