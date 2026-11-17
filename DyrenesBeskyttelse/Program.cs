@@ -27,6 +27,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<VolunteerService>();
 builder.Services.AddScoped<AdminSession>();
+builder.Services.AddScoped<ReportService>();
 
 var app = builder.Build();
 

@@ -38,7 +38,7 @@ public class ReportService
 
     public async Task<TimesheetReport> GetReport(DateTime start, DateTime end)
     {
-        List<Timesheet> timesheets = this._GetTimesheetsAsync(start, end).Result;
+        List<Timesheet> timesheets = await this._GetTimesheetsAsync(start, end);
         
         return new TimesheetReport(start, end, timesheets);
     }
