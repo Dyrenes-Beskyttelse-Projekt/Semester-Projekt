@@ -11,18 +11,11 @@
     <link rel="stylesheet" href="@Assets["DyrenesBeskyttelse.styles.css"]"/>
     <ImportMap/>
     <link rel="icon" type="image/png" href="favicon.png"/>
-    <HeadOutlet/>
-    @* Siden starter altid øverst, når den åbnes eller genindlæses. Ellers prøver Safari på iPad'en
-       at huske, hvor langt nede man var, og mens listen hentes, kan siden ende et sted, hvor
-       toppen ikke kan nås. Gælder alle sider. *@
-    <script>
-        if ("scrollRestoration" in history) { history.scrollRestoration = "manual"; }
-        window.addEventListener("pageshow", function () { window.scrollTo(0, 0); });
-    </script>
+    <HeadOutlet @rendermode="InteractiveServer"/>
 </head>
 
 <body>
-<Routes/>
+<Routes @rendermode="InteractiveServer"/>
 <ReconnectModal/>
 <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>

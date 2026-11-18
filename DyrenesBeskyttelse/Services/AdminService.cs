@@ -80,4 +80,51 @@ public class AdminService
 
         return new LoginResult(true, null, admin);
     }
+    
+    // US-5.7: hent én frivillig (bruges til at forudfylde redigeringssiden)
+    public async Task<Volunteer?> GetVolunteerByIdAsync(long id)
+    {
+        return await _db.Volunteers.FindAsync(id);
+    }
+
+// US-5.7: opdater en frivillig
+    public async Task<bool> UpdateVolunteerAsync(long id, string firstName, string lastName,
+        string address, string email, string phoneNumber)
+    {
+        var volunteer = await _db.Volunteers.FindAsync(id);
+        if (volunteer == null)
+        {
+            return false;
+        }
+
+        volunteer.UpdateDetails(firstName, lastName, address, email, phoneNumber);
+        await _db.SaveChangesAsync();
+        return true;
+    }
+    
+    //Saed: // Liste over alle frivillige inkl. sessioner (bruges til "tjekket ind lige nu")
+    public async Task<List<Volunteer>> GetAllVolunteersAsync()
+    {
+        return await _db.Volunteers
+            .Include(v => v.Sessions)
+            .OrderBy(v => v.FirstName).ThenBy(v => v.LastName)
+            .ToListAsync();
+
+    }
+    // Skift mellem aktiv og inaktiv
+    public async Task<bool> SetVolunteerActiveAsync(long id, bool active)
+    {
+        var volunteer = await _db.Volunteers.FindAsync(id);
+        if (volunteer == null)
+            return false;
+
+        if (active) volunteer.Activate();
+        else volunteer.Deactivate();
+
+        await _db.SaveChangesAsync();
+        return true;
+    }
+    
+    
+    
 }
