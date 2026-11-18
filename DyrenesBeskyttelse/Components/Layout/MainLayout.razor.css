@@ -34,6 +34,28 @@ main {
         text-decoration: underline;
     }
 
+/* 18/11: "Logget ind som ..." og "Log ud" oppe i højre hjørne */
+.logget-ind {
+    color: #1a1a1a;
+    margin-right: 1rem;
+    white-space: nowrap;
+}
+
+.log-ud-knap {
+    background: #fff;
+    color: #7E0D00;
+    border: 2px solid #7E0D00;
+    border-radius: 6px;
+    padding: 4px 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.log-ud-knap:hover {
+    background: #7E0D00;
+    color: #fff;
+}
+
     .top-row ::deep a:first-child {
         overflow: hidden;
         text-overflow: ellipsis;

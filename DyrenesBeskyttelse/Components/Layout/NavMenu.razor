@@ -5,7 +5,9 @@
 @inject NavigationManager Nav
 
 @* 18/11 (US-7.3, Saed): Den eneste menu. Saeds AdminNavs/AdminLayouts og Admin.razor er slettet,
-   så administrationen kun har én menu. Administrationslinks og "Log ud" vises kun, når man er logget ind. *@
+   så administrationen kun har én menu.
+   18/11: "Opret frivillig" og "Månedsrapport" er fjernet herfra, fordi de er knapper på /admin, og
+   "Log ud" står nu oppe i højre hjørne (MainLayout.razor). *@
 <div class="top-row ps-3 navbar">
     <div class="container-fluid">
         <a class="navbar-brand" href="">DyrenesBeskyttelse</a>
@@ -33,30 +35,7 @@
         </div>
         
 
-        @if (Session.IsLoggedIn)
-        {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="opret-frivillig">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Opret frivillig
-                </NavLink>
-            </div>
-
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="report">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Månedsrapport
-                </NavLink>
-            </div>
-
-            @* "Registrér fremmøde fra papirliste" (US-10.1) tilføjes her, når siden er lavet.
-               (Linket til registrer-papirliste er fjernet, fordi siden ikke findes endnu.) *@
-
-            <div class="nav-item px-3">
-                <button class="nav-link" @onclick="LogUd">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Log ud (@Session.FullName)
-                </button>
-            </div>
-        }
-        else
+        @if (!Session.IsLoggedIn)
         {
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="login">
@@ -78,12 +57,6 @@
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
         => InvokeAsync(StateHasChanged);
-
-    private void LogUd()
-    {
-        Session.SignOut();
-        Nav.NavigateTo("/");
-    }
 
     public void Dispose()
     {
