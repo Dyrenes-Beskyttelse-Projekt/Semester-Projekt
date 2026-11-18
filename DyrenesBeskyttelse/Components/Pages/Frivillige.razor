@@ -1,0 +1,115 @@
+﻿@page "/frivillige"
+@layout AdminLayouts
+@rendermode InteractiveServer
+@implements IDisposable
+@inherits OwningComponentBase<AdminService>
+@using DyrenesBeskyttelse.Components.Layout
+@using DyrenesBeskyttelse.Components.Models
+@using DyrenesBeskyttelse.Components.Services
+@using DyrenesBeskyttelse.Services
+@inject AdminSession Session
+
+<PageTitle>Frivillige</PageTitle>
+
+@if (!Session.IsLoggedIn)
+{
+    <h1>Frivillige</h1>
+    <p>Du skal være logget ind som admin for at se denne side.</p>
+    <a href="login" class="btn btn-primary">Log ind</a>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-start">
+        <h1>Frivillige</h1>
+        <a href="opret-frivillig" class="btn btn-primary">Opret frivillig</a>
+    </div>
+
+    @if (frivillige == null)
+    {
+        <p>Henter frivillige...</p>
+    }
+    else
+    {
+        <p class="text-muted">
+            @frivillige.Count(v => v.IsActive) aktive frivillige ·
+            @frivillige.Count(v => v.Sessions.Any(s => s.SessionEnd == null)) tjekket ind lige nu
+        </p>
+
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Navn</th>
+                    <th>Kontakt</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var v in frivillige)
+                {
+                    <tr>
+                        <td>@v.GetFullName()</td>
+                        <td>
+                            <div>@v.Address</div>
+                            <div class="text-muted small">@v.PhoneNumber · @v.Email</div>
+                        </td>
+                        <td>@(v.IsActive ? "Aktiv" : "Inaktiv")</td>
+                        <td class="text-end">
+                            <a href="rediger-frivillig/@v.Id" class="btn btn-sm btn-outline-primary">Ret</a>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => SkiftStatus(v)">
+                                @(v.IsActive ? "Gør inaktiv" : "Gør aktiv")
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private List<Volunteer>? frivillige;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Session.OnChange += OnChanged;
+        await Opdater();
+    }
+
+    // Gendan login efter genindlæsning (F5)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await Session.RestoreAsync();
+    }
+
+    private void OnChanged() => _ = InvokeAsync(Opdater);
+
+    // Hent kun listen, når man er logget ind
+    private async Task Opdater()
+    {
+        if (Session.IsLoggedIn)
+        {
+            frivillige ??= await Service.GetAllVolunteersAsync();
+        }
+        else
+        {
+            frivillige = null;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task SkiftStatus(Volunteer v)
+    {
+        if (!Session.IsLoggedIn) return;
+
+        await Service.SetVolunteerActiveAsync(v.Id, !v.IsActive);
+        frivillige = await Service.GetAllVolunteersAsync();
+    }
+
+    public void Dispose()
+    {
+        Session.OnChange -= OnChanged;
+    }
+}

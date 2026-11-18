@@ -58,7 +58,7 @@
         if (result.Success && result.Admin is not null)
         {
             Session.SignIn(result.Admin);
-            Nav.NavigateTo("/");
+            Nav.NavigateTo("/admin");
         }
         else
         {

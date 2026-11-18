@@ -88,4 +88,30 @@ public class AdminService
         await _db.SaveChangesAsync();
         return true;
     }
+    
+    //Saed: // Liste over alle frivillige inkl. sessioner (bruges til "tjekket ind lige nu")
+    public async Task<List<Volunteer>> GetAllVolunteersAsync()
+    {
+        return await _db.Volunteers
+            .Include(v => v.Sessions)
+            .OrderBy(v => v.FirstName).ThenBy(v => v.LastName)
+            .ToListAsync();
+
+    }
+    // Skift mellem aktiv og inaktiv
+    public async Task<bool> SetVolunteerActiveAsync(long id, bool active)
+    {
+        var volunteer = await _db.Volunteers.FindAsync(id);
+        if (volunteer == null)
+            return false;
+
+        if (active) volunteer.Activate();
+        else volunteer.Deactivate();
+
+        await _db.SaveChangesAsync();
+        return true;
+    }
+    
+    
+    
 }

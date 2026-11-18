@@ -1,4 +1,6 @@
 ﻿@page "/rediger-frivillig/{Id:long}"
+@layout AdminLayouts
+@using DyrenesBeskyttelse.Components.Layout
 @* TODO (admin-login): tilføj @attribute [Authorize(Roles = "Admin")] når login er lavet *@
 @rendermode InteractiveServer
 @inherits OwningComponentBase<AdminService>
