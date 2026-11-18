@@ -4,7 +4,9 @@
 @inject AdminSession Session
 @inject NavigationManager Nav
 
-<div class="top-row ps-3 navbar navbar-dark">
+@* 18/11 (US-7.3, Saed): Den eneste menu. Saeds AdminNavs/AdminLayouts og Admin.razor er slettet,
+   så administrationen kun har én menu. Administrationslinks og "Log ud" vises kun, når man er logget ind. *@
+<div class="top-row ps-3 navbar">
     <div class="container-fluid">
         <a class="navbar-brand" href="">DyrenesBeskyttelse</a>
     </div>
@@ -34,22 +36,19 @@
         @if (Session.IsLoggedIn)
         {
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="frivillige">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Frivillige
-                </NavLink>
-            </div>
-            
-            <div class="nav-item px-3">
                 <NavLink class="nav-link" href="opret-frivillig">
                     <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Opret frivillig
                 </NavLink>
             </div>
 
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="registrer-papirliste">
-                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Papirliste
+                <NavLink class="nav-link" href="report">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Månedsrapport
                 </NavLink>
             </div>
+
+            @* "Registrér fremmøde fra papirliste" (US-10.1) tilføjes her, når siden er lavet.
+               (Linket til registrer-papirliste er fjernet, fordi siden ikke findes endnu.) *@
 
             <div class="nav-item px-3">
                 <button class="nav-link" @onclick="LogUd">

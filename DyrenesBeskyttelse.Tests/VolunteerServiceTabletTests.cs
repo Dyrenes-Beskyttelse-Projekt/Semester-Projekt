@@ -108,7 +108,7 @@ public class VolunteerServiceTabletTests : IDisposable
         await _service.CheckInAsync(id);
 
         bool ok = await _service.CheckOutAsync(id);
-        var session = await _db.AttendanceSessions.SingleAsync(TestContext.Current.CancellationToken);
+        var session = await _db.Attendances.SingleAsync(TestContext.Current.CancellationToken);
         var volunteer = (await _service.GetTabletListAsync()).Single();
 
         Assert.True(ok);

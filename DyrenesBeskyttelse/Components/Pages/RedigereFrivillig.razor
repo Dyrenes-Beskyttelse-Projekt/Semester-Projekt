@@ -1,8 +1,8 @@
 ﻿@page "/rediger-frivillig/{Id:long}"
-@layout AdminLayouts
-@using DyrenesBeskyttelse.Components.Layout
-@* TODO (admin-login): tilføj @attribute [Authorize(Roles = "Admin")] når login er lavet *@
-@rendermode InteractiveServer
+@* 18/11 (US-7.3): Bruger nu den fælles menu (MainLayout) ligesom de andre administrationssider. *@
+@* 18/11 (US-4.3): Kun for administratorer. <AdminOnly> + prerender: false, ligesom /admin. *@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using DyrenesBeskyttelse.Components.Shared
 @inherits OwningComponentBase<AdminService>
 @using System.ComponentModel.DataAnnotations
 @using DyrenesBeskyttelse.Components.Services
@@ -23,7 +23,14 @@
         border-radius: 6px;
         background: #fff;
     }
-    .opret-felt input:focus { outline: none; border-color: #1f6fd0; box-shadow: 0 0 0 3px rgba(31, 111, 208, 0.18); }
+    .opret-felt input:focus { outline: none; border-color: #7E0D00; box-shadow: 0 0 0 3px rgba(126, 13, 0, 0.18); }
+
+    /* 18/11: Dyrenes Beskyttelses farver (creme, rød, sort) ligesom /admin */
+    .opret-side h1 { color: #7E0D00; font-weight: bold; }
+    .opret-check { display: flex; align-items: center; gap: 10px; }
+    .opret-check input { width: 20px; height: 20px; accent-color: #7E0D00; }
+    .opret-check label { font-weight: 600; font-size: 0.9rem; }
+    .opret-hjaelp { color: #6c757d; font-size: 0.85rem; margin: 6px 0 0 30px; }
 
     .opret-raekke { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); column-gap: 24px; }
 
@@ -31,10 +38,10 @@
 
     .opret-knapper { display: flex; gap: 14px; margin-top: 36px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
     .knap-primaer {
-        background: #1f6fd0; color: #fff; border: 1px solid #1f6fd0;
+        background: #7E0D00; color: #fff; border: 1px solid #7E0D00;
         padding: 11px 26px; border-radius: 6px; font-size: 1rem; font-weight: 500; cursor: pointer;
     }
-    .knap-primaer:hover { background: #195cb0; }
+    .knap-primaer:hover { background: #5E0A00; }
     .knap-sekundaer {
         background: #fff; color: #495057; border: 1px solid #ced4da;
         padding: 11px 26px; border-radius: 6px; font-size: 1rem; text-decoration: none;
@@ -47,6 +54,7 @@
     }
 </style>
 
+<AdminOnly>
 <div class="opret-side">
     <h1>Rediger frivillig</h1>
     <p class="opret-undertekst">Ret oplysningerne herunder og tryk på gem.</p>
@@ -95,9 +103,16 @@
                 <ValidationMessage For="() => formular.PhoneNumber" class="opret-fejl" />
             </div>
 
+            @* 18/11 (US-6): "Startet før 2026" kan rettes bagefter. Samme felt som i "Opret frivillig". *@
+            <div class="opret-check">
+                <InputCheckbox id="startetFoer2026" @bind-Value="formular.StartedBefore2026" />
+                <label for="startetFoer2026">Startet før 2026</label>
+            </div>
+            <p class="opret-hjaelp">Sæt flueben, hvis den frivillige startede før 2026. Så skal den frivillige møde mindst hver 14. dag, ellers mindst én gang om ugen.</p>
+
             <div class="opret-knapper">
                 <button type="submit" class="knap-primaer">Gem ændringer</button>
-                <a href="/" class="knap-sekundaer">Annuller</a>
+                <a href="/admin" class="knap-sekundaer">Annuller</a>
             </div>
         </EditForm>
     }
@@ -107,6 +122,7 @@
         <div class="opret-succes">Frivillig opdateret!</div>
     }
 </div>
+</AdminOnly>
 
 @code {
     [Parameter] public long Id { get; set; }
@@ -131,14 +147,15 @@
             LastName = v.LastName,
             Address = v.Address,
             Email = v.Email,
-            PhoneNumber = v.PhoneNumber
+            PhoneNumber = v.PhoneNumber,
+            StartedBefore2026 = v.StartedBefore2026
         };
     }
 
     private async Task Gem()
     {
         gemt = await Service.UpdateVolunteerAsync(Id, formular!.FirstName, formular.LastName,
-            formular.Address, formular.Email, formular.PhoneNumber);
+            formular.Address, formular.Email, formular.PhoneNumber, formular.StartedBefore2026);
     }
 
     // Hjælpeklasse kun til formularen
@@ -165,5 +182,8 @@
         [Phone(ErrorMessage = "Ugyldigt mobilnummer")]
         [StringLength(100)]
         public string PhoneNumber { get; set; } = "";
+
+        // US-6: Ingen [Required], fordi et afkrydsningsfelt altid har en værdi (true/false).
+        public bool StartedBefore2026 { get; set; }
     }
 }

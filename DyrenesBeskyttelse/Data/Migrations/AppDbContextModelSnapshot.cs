@@ -60,7 +60,7 @@ namespace DyrenesBeskyttelse.Data.Migrations
                     b.ToTable("Admins");
                 });
 
-            modelBuilder.Entity("DyrenesBeskyttelse.Components.Models.AttendanceSession", b =>
+            modelBuilder.Entity("DyrenesBeskyttelse.Components.Models.Attendance", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -85,7 +85,7 @@ namespace DyrenesBeskyttelse.Data.Migrations
 
                     b.HasIndex("VolunteerId");
 
-                    b.ToTable("AttendanceSessions");
+                    b.ToTable("Attendances");
                 });
 
             modelBuilder.Entity("DyrenesBeskyttelse.Components.Models.Volunteer", b =>
@@ -130,7 +130,7 @@ namespace DyrenesBeskyttelse.Data.Migrations
                     b.ToTable("Volunteers");
                 });
 
-            modelBuilder.Entity("DyrenesBeskyttelse.Components.Models.AttendanceSession", b =>
+            modelBuilder.Entity("DyrenesBeskyttelse.Components.Models.Attendance", b =>
                 {
                     b.HasOne("DyrenesBeskyttelse.Components.Models.Volunteer", null)
                         .WithMany("Sessions")

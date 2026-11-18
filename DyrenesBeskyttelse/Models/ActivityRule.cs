@@ -1,4 +1,4 @@
-namespace DyrenesBeskyttelse.Components.Models;
+﻿namespace DyrenesBeskyttelse.Components.Models;
 
 // US-9.1 (Mikes task, lavet af Julie d. 17/11 fra branchen Julie-sprint2):
 // Aktivitetsreglen som en klasse uden database. Den får datoerne for en frivilligs fremmøde og
@@ -36,8 +36,18 @@ public static class ActivityRule
     {
         var monthStart = new DateTime(year, month, 1);
         var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        return LargestGap(dates, monthStart, monthEnd, lastBeforeMonth);
+    }
 
-        // Kun datoer i måneden, hver dato én gang, i rækkefølge.
+    // 18/11: Samme beregning for en vilkårlig periode (fra og med periodStart til og med periodEnd).
+    // Bruges af Simons månedsrapport, hvor man vælger en start- og slutdato.
+    public static int? LargestGap(IEnumerable<DateTime> dates, DateTime periodStart, DateTime periodEnd,
+        DateTime? lastBeforeMonth = null)
+    {
+        var monthStart = periodStart.Date;
+        var monthEnd = periodEnd.Date;
+
+        // Kun datoer i perioden, hver dato én gang, i rækkefølge.
         var days = dates
             .Select(d => d.Date)
             .Where(d => d >= monthStart && d <= monthEnd)
@@ -70,7 +80,15 @@ public static class ActivityRule
     public static bool BreaksRule(bool startedBefore2026, IEnumerable<DateTime> dates, int year, int month,
         DateTime? lastBeforeMonth = null)
     {
-        var gap = LargestGap(dates, year, month, lastBeforeMonth);
+        var monthStart = new DateTime(year, month, 1);
+        return BreaksRule(startedBefore2026, dates, monthStart, monthStart.AddMonths(1).AddDays(-1), lastBeforeMonth);
+    }
+
+    // 18/11: Samme regel for en vilkårlig periode (bruges af månedsrapporten, se ReportService).
+    public static bool BreaksRule(bool startedBefore2026, IEnumerable<DateTime> dates, DateTime periodStart,
+        DateTime periodEnd, DateTime? lastBeforePeriod = null)
+    {
+        var gap = LargestGap(dates, periodStart, periodEnd, lastBeforePeriod);
 
         // Intet fremmøde i måneden -> altid markeret (acceptkriteriet i US-9).
         if (gap == null)

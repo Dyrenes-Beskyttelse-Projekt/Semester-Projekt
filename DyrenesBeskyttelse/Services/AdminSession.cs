@@ -39,11 +39,12 @@ public class AdminSession
     public async Task RestoreAsync()
     {
         if (_restored) return;
-        _restored = true;
 
         try
         {
             var result = await _storage.GetAsync<string>(Key);
+            // 18/11: Sættes først, når lageret er læst. Fejler et forsøg (fx for tidligt), kan det prøves igen.
+            _restored = true;
             if (result.Success && result.Value is not null)
             {
                 FullName = result.Value;

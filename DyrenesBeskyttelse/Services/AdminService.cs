@@ -22,12 +22,14 @@ public class AdminService
         return await _db.Admins.ToListAsync();
     }
 
-    // Julie (US-7.0): Alle frivillige, både aktive og inaktive, til administrationens forside.
-    // Sorteres efter navn med dansk alfabet (Æ, Ø, Å til sidst). Det sker efter ToListAsync, fordi
-    // SQLite ikke kender den danske rækkefølge. Samme fremgangsmåde som TabletVolunteer.SortByName.
+    // Julie (US-7.0) + Saed: Alle frivillige, både aktive og inaktive, til administrationens forside
+    // (/admin) og Saeds side /frivillige. Registreringerne (Sessions) hentes med, så Saeds side kan vise,
+    // hvem der er tjekket ind lige nu. Sorteres efter navn med dansk alfabet (Æ, Ø, Å til sidst). Det sker
+    // efter ToListAsync, fordi SQLite ikke kender den danske rækkefølge.
+    // (18/11: Saed og Julie havde begge lavet en metode med dette navn. De er slået sammen til én.)
     public async Task<List<Volunteer>> GetAllVolunteersAsync()
     {
-        var volunteers = await _db.Volunteers.ToListAsync();
+        var volunteers = await _db.Volunteers.Include(v => v.Sessions).ToListAsync();
         var danish = StringComparer.Create(new System.Globalization.CultureInfo("da-DK"), true);
         return volunteers.OrderBy(v => v.GetFullName(), danish).ToList();
     }
@@ -87,9 +89,9 @@ public class AdminService
         return await _db.Volunteers.FindAsync(id);
     }
 
-// US-5.7: opdater en frivillig
+// US-5.7: opdater en frivillig (18/11: + startedBefore2026, US-6 "kan rettes bagefter")
     public async Task<bool> UpdateVolunteerAsync(long id, string firstName, string lastName,
-        string address, string email, string phoneNumber)
+        string address, string email, string phoneNumber, bool startedBefore2026)
     {
         var volunteer = await _db.Volunteers.FindAsync(id);
         if (volunteer == null)
@@ -97,20 +99,11 @@ public class AdminService
             return false;
         }
 
-        volunteer.UpdateDetails(firstName, lastName, address, email, phoneNumber);
+        volunteer.UpdateDetails(firstName, lastName, address, email, phoneNumber, startedBefore2026);
         await _db.SaveChangesAsync();
         return true;
     }
     
-    //Saed: // Liste over alle frivillige inkl. sessioner (bruges til "tjekket ind lige nu")
-    public async Task<List<Volunteer>> GetAllVolunteersAsync()
-    {
-        return await _db.Volunteers
-            .Include(v => v.Sessions)
-            .OrderBy(v => v.FirstName).ThenBy(v => v.LastName)
-            .ToListAsync();
-
-    }
     // Skift mellem aktiv og inaktiv
     public async Task<bool> SetVolunteerActiveAsync(long id, bool active)
     {

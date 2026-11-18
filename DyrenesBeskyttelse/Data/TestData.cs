@@ -158,7 +158,7 @@ public static class TestData
 
                 // SessionEnd sættes direkte, fordi RegisterEndTime() bruger klokken lige nu.
                 // Duration bliver derfor 0, men rapporten bruger kun datoerne.
-                volunteer.Sessions.Add(new AttendanceSession(0, start)
+                volunteer.Sessions.Add(new Attendance(0, start)
                 {
                     SessionEnd = end,
                     ExpiredAt = start.ToUniversalTime().AddDays(1)

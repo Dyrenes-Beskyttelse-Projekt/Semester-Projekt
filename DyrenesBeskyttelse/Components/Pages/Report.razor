@@ -1,7 +1,9 @@
 ﻿
 @page "/report"
-@layout TabletLayout
-@rendermode InteractiveServer
+@* 18/11 (US-4.3): Kun for administratorer. <AdminOnly> + prerender: false, ligesom /admin.
+   TabletLayout er fjernet, så siden har menuen ligesom de andre administrationssider. *@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using DyrenesBeskyttelse.Components.Shared
 
 @using DyrenesBeskyttelse.Components.Models
 @using DyrenesBeskyttelse.Services
@@ -10,6 +12,8 @@
 @inherits OwningComponentBase
 
 <PageTitle>LogCat · Extract Report</PageTitle>
+
+<AdminOnly>
 
 <h1 class="text-center mb-4">Extract Report</h1>
 @if (report == null)
@@ -77,6 +81,8 @@ else
     }
 
 </div>
+
+</AdminOnly>
 
 @code {
 

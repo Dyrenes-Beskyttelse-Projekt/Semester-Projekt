@@ -120,7 +120,7 @@ public class VolunteerService
     {
         DateTime now = DateTime.UtcNow;
 
-        var expiredSessions = await _db.AttendanceSessions
+        var expiredSessions = await _db.Attendances
             .Where(ses => ses.SessionEnd == null &&
                           ses.ExpiredAt <= now)
             .ToListAsync(cancellationToken);
@@ -151,7 +151,9 @@ public class VolunteerService
             return false;
         }
 
-        volunteer.UpdateDetails(firstName, lastName, address, email, phoneNumber);
+        // 18/11: UpdateDetails tager nu også StartedBefore2026. Her beholdes den nuværende værdi.
+        // OBS: Metoden bruges ikke. Redigeringssiden bruger AdminService.UpdateVolunteerAsync.
+        volunteer.UpdateDetails(firstName, lastName, address, email, phoneNumber, volunteer.StartedBefore2026);
         await _db.SaveChangesAsync();
         return true;
     }

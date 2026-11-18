@@ -1,4 +1,4 @@
-@using DyrenesBeskyttelse.Services
+﻿@using DyrenesBeskyttelse.Services
 @inject AdminSession Session
 @inject NavigationManager Nav
 
@@ -12,10 +12,12 @@
    siden først uden forbindelse, hvor AdminSession altid er tom, så man ville blive sendt til
    login, selvom man er logget ind.
 
-   Login gælder kun i den fane, man loggede ind i, og forsvinder ved genindlæsning (F5), fordi
-   AdminSession kun ligger i hukommelsen på serveren. *@
+   18/11: Saed har gjort det sådan, at login huskes i browserens sessionStorage, så man ikke bliver
+   logget ud ved genindlæsning (F5). Derfor henter AdminOnly først det huskede login
+   (Session.RestoreAsync), før den tjekker. Det sker i OnAfterRenderAsync (ligesom i Saeds menu),
+   fordi browserens lager først kan læses, når siden er vist. Indtil da vises intet. *@
 
-@if (Session.IsLoggedIn)
+@if (checkedLogin && Session.IsLoggedIn)
 {
     @ChildContent
 }
@@ -23,9 +25,29 @@
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
+    private bool checkedLogin;
+
     protected override void OnInitialized()
     {
-        if (!Session.IsLoggedIn)
+        // Er man allerede logget ind i denne fane, vises siden med det samme.
+        checkedLogin = Session.IsLoggedIn;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || checkedLogin)
+        {
+            return;
+        }
+
+        await Session.RestoreAsync();
+        checkedLogin = true;
+
+        if (Session.IsLoggedIn)
+        {
+            StateHasChanged();
+        }
+        else
         {
             Nav.NavigateTo("/login");
         }

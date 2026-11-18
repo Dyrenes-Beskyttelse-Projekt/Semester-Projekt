@@ -36,10 +36,18 @@ else
             {
                 <div class="card volunteer-card mb-4">
 
-                    <div class="card-header bg-primary text-white">
+                    @* 18/11 (US-9): Frivillige, der ikke overholder aktivitetsreglen, markeres med rødt. *@
+                    <div class="card-header text-white @(timesheet.BreaksActivityRule ? "brud" : "bg-primary")">
                         <h2 class="mb-0">
                             @timesheet.Name
                         </h2>
+                        @if (timesheet.BreaksActivityRule)
+                        {
+                            <p class="mb-0 mt-1 fs-5">
+                                Overholder ikke aktivitetsreglen
+                                (@(timesheet.StartedBefore2026 ? "mindst hver 14. dag" : "mindst én gang om ugen"))
+                            </p>
+                        }
                     </div>
 
                     <div class="card-body">
@@ -126,6 +134,11 @@ else
 
     .volunteer-card .card-header {
         padding: 18px;
+    }
+
+    /* 18/11 (US-9): rød markering (Dyrenes Beskyttelses røde farve) */
+    .volunteer-card .card-header.brud {
+        background-color: #7E0D00;
     }
 
     .volunteer-card .card-body {

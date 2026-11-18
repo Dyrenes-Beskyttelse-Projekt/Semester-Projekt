@@ -36,7 +36,7 @@ public class Volunteer
     // Eksisterende frivillige får false, indtil administrationen retter det.
     public bool StartedBefore2026 { get; set; }
 
-    public List<AttendanceSession> Sessions { get; set; } = new List<AttendanceSession>();
+    public List<Attendance> Sessions { get; set; } = new List<Attendance>();
 
     // US-6.1: startedBefore2026 er en valgfri parameter (standard false). Så virker de steder,
     // der allerede kalder constructoren med fem parametre (fx testene), uden at skulle ændres.
@@ -50,7 +50,7 @@ public class Volunteer
         this.PhoneNumber = phoneNumber;
         this.StartedBefore2026 = startedBefore2026;
         this.IsActive = true;
-        this.Sessions = new List<AttendanceSession>();
+        this.Sessions = new List<Attendance>();
     }
 
     // US-6.1/US-7.0: Aktivitetsreglen som tekst, så den kan vises i administrationens liste.
@@ -79,16 +79,18 @@ public class Volunteer
     // Erstatter addSession(). Om tjek ind er tilladt, tjekker VolunteerService.CheckInAsync.
     public void CheckIn()
     {
-        Sessions.Add(new AttendanceSession(0, DateTime.Now));
+        Sessions.Add(new Attendance(0, DateTime.Now));
     }
     //Saed (US-5.5):  
+    // 18/11: startedBefore2026 tilføjet, så "Startet før 2026" kan rettes bagefter (acceptkriterie i US-6).
     public void UpdateDetails(string firstName, string lastName, string address,
-        string email, string phoneNumber)
+        string email, string phoneNumber, bool startedBefore2026)
     {
         FirstName = firstName;
         LastName = lastName;
         Address = address;
         Email = email;
         PhoneNumber = phoneNumber;
+        StartedBefore2026 = startedBefore2026;
     }
 }
