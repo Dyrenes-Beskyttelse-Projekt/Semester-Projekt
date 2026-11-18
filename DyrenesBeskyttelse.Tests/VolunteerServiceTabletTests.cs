@@ -1,6 +1,7 @@
 using DyrenesBeskyttelse.Components.Models;
 using DyrenesBeskyttelse.Components.Services;
 using DyrenesBeskyttelse.Data;
+using DyrenesBeskyttelse.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
