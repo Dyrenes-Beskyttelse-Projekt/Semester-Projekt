@@ -40,7 +40,7 @@ public class Admin
         this.PasswordHash = PasswordHash;
     }
     
-    public string getfullName()
+    public string GetfullName()
     {
         return FirstName + " " + LastName;
     }

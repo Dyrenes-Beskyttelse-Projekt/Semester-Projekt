@@ -1,0 +1,117 @@
+﻿@* US-10.1 *@
+@page "/RegFremmoede"
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using DyrenesBeskyttelse.Components.Shared
+
+@using DyrenesBeskyttelse.Components.Models
+@using DyrenesBeskyttelse.Components.Services
+@using DyrenesBeskyttelse.Services
+@using Microsoft.Extensions.DependencyInjection
+
+@inherits OwningComponentBase
+
+<PageTitle>LogCat · Registrér fremmøde</PageTitle>
+
+<style>
+    .admin-side {
+        --db-roed: #7E0D00;
+        --db-roed-moerk: #5E0A00;
+        --db-creme: #F5F0E6;
+        --db-sort: #1a1a1a;
+        color: var(--db-sort);
+        padding: 0 0 40px 0;
+    }
+    .admin-top {
+        background: var(--db-creme);
+        border-left: 6px solid var(--db-roed);
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+    }
+    .admin-top h1 { color: var(--db-roed); font-weight: bold; font-size: 2.2rem; margin: 0 0 4px 0; }
+    .admin-top p { color: var(--db-sort); margin: 0; }
+
+    .reg-form {
+        background: var(--db-creme);
+        border: 1px solid #e3dccd;
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 480px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .reg-form label { font-weight: 600; margin-top: 8px; }
+
+    .gem-knap {
+        margin-top: 16px; background: var(--db-roed); color: #fff; border: 2px solid var(--db-roed);
+        padding: 11px 22px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer;
+    }
+    .gem-knap:hover { background: var(--db-roed-moerk); border-color: var(--db-roed-moerk); }
+    .gem-knap:disabled { opacity: 0.6; cursor: default; }
+    .tilbage-link { color: var(--db-roed); font-weight: 600; text-decoration: none; }
+</style>
+
+<AdminOnly>
+    <div class="admin-side">
+        <div class="admin-top">
+            <h1>Registrér fremmøde fra papirliste</h1>
+            <p>Vælg frivillig og dato for fremmødet.</p>
+        </div>
+
+        <div class="reg-form">
+            <label for="frivillig">Frivillig</label>
+            <select id="frivillig" class="form-select" @bind="_selectedId">
+                <option value="0">Vælg frivillig</option>
+                @foreach (var v in _volunteers)
+                {
+                    <option value="@v.Id">@v.GetFullName()</option>
+                }
+            </select>
+
+            <label for="dato">Dato</label>
+            <input id="dato" type="date" class="form-control" @bind="_date"
+                   max="@DateTime.Today.ToString("yyyy-MM-dd")"
+                   onclick="this.showPicker()" />
+
+            <button class="gem-knap" disabled="@_busy" @onclick="SaveAsync">Gem</button>
+
+            @if (_message != "")
+            {
+                <p>@_message</p>
+            }
+        </div>
+
+        <p style="margin-top: 20px;"><a class="tilbage-link" href="/admin">← Tilbage til administration</a></p>
+    </div>
+</AdminOnly>
+
+@code {
+    private AdminService AdminService => ScopedServices.GetRequiredService<AdminService>();
+   
+    private List<Volunteer> _volunteers = new();
+    private long _selectedId;
+    private DateTime _date = DateTime.Today;
+    private bool _busy;
+    private string _message = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await AdminService.GetAllVolunteersAsync();
+        _volunteers = all.Where(v => v.IsActive).ToList();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_busy) return;
+        if (_selectedId == 0) { _message = "Vælg en frivillig."; return; }
+        if (_date.Date > DateTime.Today) { _message = "Datoen må ikke ligge i fremtiden."; return; }
+
+        _busy = true;
+        var ok = await AdminService.RegisterPaperAttendanceAsync(_selectedId, _date);
+        _message = ok ? "Fremmøde gemt." : "Kunne ikke gemme.";
+        _busy = false;
+    }
+
+}
