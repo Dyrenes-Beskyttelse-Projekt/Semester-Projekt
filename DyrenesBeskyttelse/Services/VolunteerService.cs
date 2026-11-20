@@ -2,7 +2,7 @@
 using DyrenesBeskyttelse.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace DyrenesBeskyttelse.Components.Services;
+namespace DyrenesBeskyttelse.Services;
 
 public class VolunteerService
 {
@@ -120,7 +120,7 @@ public class VolunteerService
     {
         DateTime now = DateTime.UtcNow;
 
-        var expiredSessions = await _db.AttendanceSessions
+        var expiredSessions = await _db.Attendances
             .Where(ses => ses.SessionEnd == null &&
                           ses.ExpiredAt <= now)
             .ToListAsync(cancellationToken);
@@ -132,4 +132,30 @@ public class VolunteerService
 
         await _db.SaveChangesAsync(cancellationToken);
     }
+    
+   
+
+// Saed US-5.7: hent én frivillig (bruges til at forudfylde redigeringssiden)
+    public async Task<Volunteer?> GetVolunteerByIdAsync(long id)
+    {
+        return await _db.Volunteers.FindAsync(id);
+    }
+
+// Saed US-5.7: opdater en frivillig
+    public async Task<bool> UpdateVolunteerAsync(long id, string firstName, string lastName,
+        string address, string email, string phoneNumber)
+    {
+        var volunteer = await _db.Volunteers.FindAsync(id);
+        if (volunteer == null)
+        {
+            return false;
+        }
+
+        // 18/11: UpdateDetails tager nu også StartedBefore2026. Her beholdes den nuværende værdi.
+        // OBS: Metoden bruges ikke. Redigeringssiden bruger AdminService.UpdateVolunteerAsync.
+        volunteer.UpdateDetails(firstName, lastName, address, email, phoneNumber, volunteer.StartedBefore2026);
+        await _db.SaveChangesAsync();
+        return true;
+    }
+    
 }

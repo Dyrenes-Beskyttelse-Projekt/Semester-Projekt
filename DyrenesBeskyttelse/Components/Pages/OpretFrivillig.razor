@@ -1,9 +1,11 @@
 ﻿@page "/opret-frivillig"
-@* TODO (admin-login): tilføj @attribute [Authorize(Roles = "Admin")] når login er lavet *@
-@rendermode InteractiveServer
+@* US-4.3: Kun for administratorer. Uden prerendering, så login-tjekket i <AdminOnly> virker
+   (se Components/Shared/AdminOnly.razor). *@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inherits OwningComponentBase<AdminService>
 @using System.ComponentModel.DataAnnotations
 @using DyrenesBeskyttelse.Components.Services
+@using DyrenesBeskyttelse.Components.Shared
 
 <PageTitle>Opret frivillig</PageTitle>
 
@@ -28,6 +30,12 @@
 
     .opret-fejl { color: #dc3545; font-size: 0.85rem; margin-top: 6px; }
 
+    /* US-6.2: afkrydsningsfeltet "Startet før 2026" */
+    .opret-check { display: flex; align-items: center; gap: 10px; }
+    .opret-check input { width: 20px; height: 20px; }
+    .opret-check label { font-weight: 600; font-size: 0.9rem; }
+    .opret-hjaelp { color: #6c757d; font-size: 0.85rem; margin: 6px 0 0 30px; }
+
     .opret-knapper { display: flex; gap: 14px; margin-top: 36px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
     .knap-primaer {
         background: #1f6fd0; color: #fff; border: 1px solid #1f6fd0;
@@ -46,6 +54,7 @@
     }
 </style>
 
+<AdminOnly>
 <div class="opret-side">
     <h1>Opret frivillig</h1>
     <p class="opret-undertekst">Udfyld oplysningerne herunder for at oprette en ny frivillig.</p>
@@ -84,9 +93,18 @@
             <ValidationMessage For="() => formular.PhoneNumber" class="opret-fejl" />
         </div>
 
+        @* US-6.2 (Julie): Afkrydsningsfelt for aktivitetsreglen. Sat flueben = gammel frivillig
+           (mindst hver 14. dag), intet flueben = ny frivillig (mindst én gang om ugen). *@
+        <div class="opret-check">
+            <InputCheckbox id="startetFoer2026" @bind-Value="formular.StartedBefore2026" />
+            <label for="startetFoer2026">Startet før 2026</label>
+        </div>
+        <p class="opret-hjaelp">Sæt flueben, hvis den frivillige startede før 2026. Så skal den frivillige møde mindst hver 14. dag, ellers mindst én gang om ugen.</p>
+
         <div class="opret-knapper">
             <button type="submit" class="knap-primaer">Opret frivillig</button>
-            <a href="/" class="knap-sekundaer">Annuller</a>
+            @* US-7.0: Annuller fører tilbage til administrationens forside i stedet for tabletten. *@
+            <a href="/admin" class="knap-sekundaer">Annuller</a>
         </div>
     </EditForm>
 
@@ -95,6 +113,7 @@
         <div class="opret-succes">Frivillig oprettet!</div>
     }
 </div>
+</AdminOnly>
 
 @code {
     private OpretFrivilligFormular formular = new();
@@ -107,7 +126,8 @@
             formular.LastName,
             formular.Address,
             formular.Email,
-            formular.PhoneNumber);
+            formular.PhoneNumber,
+            formular.StartedBefore2026);  // US-6.2
 
         gemt = true;
         formular = new();
@@ -137,5 +157,8 @@
         [Phone(ErrorMessage = "Ugyldigt mobilnummer")]
         [StringLength(100)]
         public string PhoneNumber { get; set; } = "";
+
+        // US-6.2: Ingen [Required], fordi et afkrydsningsfelt altid har en værdi (true/false).
+        public bool StartedBefore2026 { get; set; }
     }
 }

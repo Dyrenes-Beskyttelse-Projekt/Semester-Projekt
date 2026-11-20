@@ -1,18 +1,27 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using DyrenesBeskyttelse.Components.Models;
 
-namespace DyrenesBeskyttelse.Components.Models;
+namespace DyrenesBeskyttelse.Models;
 
 public class Timesheet
 {
-    [Required]
-    public long Id { get; set; }
+    public string Name { get; set; }
     
     [Required]
-    public List<AttendanceSession> Sessions { get; set; }
+    public List<Attendance> Sessions { get; set; }
 
-    public Timesheet(long id, List<AttendanceSession> sessions)
+    // 18/11 (US-9): Sættes af ReportService ud fra ActivityRule.
+    public bool StartedBefore2026 { get; set; }
+    public bool BreaksActivityRule { get; set; }
+
+    public Timesheet(string name, List<Attendance> sessions)
     {
-        this.Id = id;
+        this.Name = name;
         this.Sessions = sessions;
+    }
+
+    public static Timesheet Create(string name, List<Attendance> sessions)
+    {
+        return new Timesheet(name, sessions);
     }
 }

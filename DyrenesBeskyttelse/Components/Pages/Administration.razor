@@ -1,0 +1,208 @@
+﻿@page "/admin"
+@* US-7.0 (Julie): Administrationens forside. Login fører hertil (se Login.razor).
+   Siden viser alle frivillige og en menu til de andre administrationssider.
+
+   Kun for administratorer: Indholdet er pakket ind i <AdminOnly> (US-4.3), og siden kører uden
+   prerendering, så login-tjekket virker, også hvis man skriver adressen direkte.
+
+   OwningComponentBase<AdminService> giver siden sin egen AdminService og AppDbContext (eget DI-scope),
+   som ryddes op, når man forlader siden. AdminService hentes via "Service". *@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inherits OwningComponentBase<AdminService>
+@using DyrenesBeskyttelse.Components.Models
+@using DyrenesBeskyttelse.Components.Services
+@using DyrenesBeskyttelse.Components.Shared
+@using DyrenesBeskyttelse.Services
+@inject AdminSession Session
+@* 18/11 (US-7.3, Saed): Administrationen har nu én liste. Saeds "Gør inaktiv"/"Gør aktiv" og
+   "Her nu" er flyttet hertil fra hans side /frivillige, som er slettet. *@
+
+<PageTitle>Administration</PageTitle>
+
+@* Farverne er de samme som i tablettens topbjælke (TabletLayout.razor.css), så administrationen
+   ligner forsiden: creme (#F5F0E6), Dyrenes Beskyttelses røde farve (#7E0D00) og sort tekst. *@
+<style>
+    .admin-side {
+        --db-roed: #7E0D00;
+        --db-roed-moerk: #5E0A00;
+        --db-creme: #F5F0E6;
+        --db-sort: #1a1a1a;
+        color: var(--db-sort);
+        padding: 0 0 40px 0;
+    }
+
+    /* Toppen ligner tablettens topbjælke: creme baggrund, rød titel, sort undertekst */
+    .admin-top {
+        background: var(--db-creme);
+        border-left: 6px solid var(--db-roed);
+        border-radius: 8px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+    }
+    .admin-top h1 { color: var(--db-roed); font-weight: bold; font-size: 2.2rem; margin: 0 0 4px 0; }
+    .admin-top p { color: var(--db-sort); margin: 0; }
+
+    /* Menuen: én rød knap pr. administrationsside */
+    .admin-menu { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+    .admin-menu a {
+        background: var(--db-roed); color: #fff; border: 2px solid var(--db-roed);
+        padding: 11px 22px; border-radius: 6px; font-size: 1rem; font-weight: 600; text-decoration: none;
+    }
+    .admin-menu a:hover { background: var(--db-roed-moerk); border-color: var(--db-roed-moerk); }
+
+    .admin-antal { font-weight: 600; margin-bottom: 10px; }
+
+    /* Tabellen: creme overskriftsrække med rød streg, creme striber */
+    .admin-tabel {
+        --bs-table-striped-bg: rgba(245, 240, 230, 0.6);
+        border: 1px solid #e3dccd;
+    }
+    .admin-tabel thead th {
+        background: var(--db-creme);
+        color: var(--db-roed);
+        border-bottom: 3px solid var(--db-roed);
+        white-space: nowrap;
+    }
+    .admin-tabel td { color: var(--db-sort); }
+
+    /* Status som små mærker: aktiv = grøn (samme grøn som "Tjek ind" på tabletten),
+       inaktiv = Dyrenes Beskyttelses røde farve */
+    .status { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
+    .status-aktiv { background: #198754; color: #fff; }
+    .status-inaktiv { background: var(--db-roed); color: #fff; }
+    .admin-tabel .raekke-inaktiv td { color: #6c757d; }
+
+    /* Knappen "Ret" i listen: rød kant, bliver rød ved hover */
+    .ret-knap {
+        display: inline-block; padding: 4px 14px; border-radius: 6px; font-weight: 600; font-size: 0.9rem;
+        color: var(--db-roed); border: 2px solid var(--db-roed); text-decoration: none; background: #fff;
+    }
+    .ret-knap:hover { background: var(--db-roed); color: #fff; }
+
+    /* Knappen "Gør inaktiv"/"Gør aktiv" (US-7.1) og mærket "Her nu" (US-12) */
+    .handlinger { white-space: nowrap; }
+    .status-knap {
+        margin-left: 6px; padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 0.9rem;
+        color: var(--db-sort); border: 2px solid #adb5bd; background: #fff; cursor: pointer;
+    }
+    .status-knap:hover { border-color: var(--db-sort); }
+    .status-her { background: var(--db-creme); color: var(--db-roed); border: 1px solid var(--db-roed); margin-left: 6px; }
+</style>
+
+<AdminOnly>
+<div class="admin-side">
+    <div class="admin-top">
+        <h1>Administration</h1>
+        <p>Velkommen @Session.FullName. Her er alle frivillige.</p>
+    </div>
+
+    @* Menuen til de andre administrationssider. Når en ny side er lavet, tilføjes en knap her:
+         - Registrér fremmøde fra papirliste   (US-10.1, samme navn som i vejledningen)
+       18/11: "Månedsrapport" (Simons side /report, US-8.1) er tilføjet. *@
+    <nav class="admin-menu">
+        <a href="/opret-frivillig">Opret frivillig</a>
+        <a href="/report">Månedsrapport</a>
+    </nav>
+
+    @if (volunteers == null)
+    {
+        <p>Henter frivillige ...</p>
+    }
+    else if (volunteers.Count == 0)
+    {
+        <p>Der er ingen frivillige endnu. Tryk på "Opret frivillig" for at oprette den første.</p>
+    }
+    else
+    {
+        <p class="admin-antal">@volunteers.Count frivillige, heraf @volunteers.Count(v => v.IsActive) aktive
+            og @volunteers.Count(IsHereNow) tjekket ind lige nu.</p>
+
+        <table class="table table-striped align-middle admin-tabel">
+            <thead>
+                <tr>
+                    <th>Navn</th>
+                    <th>Telefon</th>
+                    <th>E-mail</th>
+                    <th>Adresse</th>
+                    <th>Aktivitetsregel</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var volunteer in volunteers)
+                {
+                    <tr class="@(volunteer.IsActive ? "" : "raekke-inaktiv")">
+                        <td>
+                            @volunteer.GetFullName()
+                            @* US-12 (Saed): Tjekket ind i dag og ikke tjekket ud. *@
+                            @if (IsHereNow(volunteer))
+                            {
+                                <span class="status status-her">Her nu</span>
+                            }
+                        </td>
+                        <td>@volunteer.PhoneNumber</td>
+                        <td>@volunteer.Email</td>
+                        <td>@volunteer.Address</td>
+                        @* US-6.1: Reglen afhænger af, om den frivillige er startet før 2026. *@
+                        <td>@volunteer.GetActivityRuleText()</td>
+                        <td>
+                            @if (volunteer.IsActive)
+                            {
+                                <span class="status status-aktiv">Aktiv</span>
+                            }
+                            else
+                            {
+                                <span class="status status-inaktiv">Inaktiv</span>
+                            }
+                        </td>
+                        @* 18/11: "Ret" fører til Saeds side, hvor oplysningerne kan rettes (US-11).
+                           "Gør inaktiv"/"Gør aktiv" (US-7.1) er Saeds knap fra /frivillige. *@
+                        <td class="handlinger">
+                            <a class="ret-knap" href="/rediger-frivillig/@volunteer.Id">Ret</a>
+                            <button class="status-knap" disabled="@busy" @onclick="() => ToggleActiveAsync(volunteer)">
+                                @(volunteer.IsActive ? "Gør inaktiv" : "Gør aktiv")
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+</AdminOnly>
+
+@code {
+    private List<Volunteer>? volunteers;
+
+    // Forhindrer dobbelttryk: AppDbContext kan kun udføre én forespørgsel ad gangen.
+    private bool busy;
+
+    // US-12: Tjekket ind i dag og ikke tjekket ud (samme regel som tabletten).
+    private static bool IsHereNow(Volunteer v) =>
+        v.Sessions.Any(s => s.SessionEnd == null && s.SessionStart.Date == DateTime.Today);
+
+    // US-7.1 (Saed): Gør en frivillig inaktiv eller aktiv igen. Inaktive står ikke på tabletten,
+    // men deres registreringer bevares.
+    private async Task ToggleActiveAsync(Volunteer volunteer)
+    {
+        if (busy) return;
+        busy = true;
+        try
+        {
+            await Service.SetVolunteerActiveAsync(volunteer.Id, !volunteer.IsActive);
+            volunteers = await Service.GetAllVolunteersAsync();
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Listen vises kun, hvis man er logget ind: <AdminOnly> viser ikke indholdet ellers og sender
+        // én til /login. (18/11: Hentes altid, fordi et husket login først gendannes, når siden er vist.)
+        volunteers = await Service.GetAllVolunteersAsync();
+    }
+}

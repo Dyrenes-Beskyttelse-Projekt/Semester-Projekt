@@ -1,4 +1,14 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+@implements IDisposable
+@using DyrenesBeskyttelse.Components.Services
+@using DyrenesBeskyttelse.Services
+@inject AdminSession Session
+@inject NavigationManager Nav
+
+@* 18/11 (US-7.3, Saed): Den eneste menu. Saeds AdminNavs/AdminLayouts og Admin.razor er slettet,
+   så administrationen kun har én menu.
+   18/11: "Opret frivillig" og "Månedsrapport" er fjernet herfra, fordi de er knapper på /admin, og
+   "Log ud" står nu oppe i højre hjørne (MainLayout.razor). *@
+<div class="top-row ps-3 navbar">
     <div class="container-fluid">
         <a class="navbar-brand" href="">DyrenesBeskyttelse</a>
     </div>
@@ -8,28 +18,49 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
         
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="Login">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Login
-            </NavLink>
+            @if (Session.IsLoggedIn)
+            {
+                <NavLink class="nav-link" href="admin">
+                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Admin
+                </NavLink>
+            }
+            else
+            {
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                </NavLink>
+            }
         </div>
+        
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+        @if (!Session.IsLoggedIn)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="login">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Login
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Session.OnChange += OnChanged;
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+        => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Session.OnChange -= OnChanged;
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

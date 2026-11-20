@@ -1,12 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using DyrenesBeskyttelse.Models;
 
 namespace DyrenesBeskyttelse.Components.Models;
 
 public class TimesheetReport
 {
-    [Required]
-    public long Id  { get; set; }
-    
     [Required]
     public DateTime StartDate { get; set; }
     
@@ -15,11 +13,15 @@ public class TimesheetReport
     
     public List<Timesheet> Timesheets { get; set; }
 
-    public TimesheetReport(long id, DateTime startDate, DateTime endDate, List<Timesheet> timesheets)
+    public TimesheetReport(DateTime startDate, DateTime endDate, List<Timesheet> timesheets)
     {
-        Id = id;
         StartDate = startDate;
         EndDate = endDate;
         Timesheets = timesheets;
+    }
+
+    public static TimesheetReport Create(DateTime startDate, DateTime endDate, List<Timesheet> timesheets)
+    {
+        return new TimesheetReport(startDate, endDate, timesheets);
     }
 }

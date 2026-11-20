@@ -1,0 +1,55 @@
+﻿@using DyrenesBeskyttelse.Services
+@inject AdminSession Session
+@inject NavigationManager Nav
+
+@* US-4.3: Administrationssiderne kan ikke åbnes uden login.
+   Pak indholdet af en administrationsside ind i <AdminOnly> ... </AdminOnly>.
+   Er man ikke logget ind, vises indholdet ikke, og man sendes til /login. Det gælder også,
+   hvis man skriver adressen direkte i browseren, fx /opret-frivillig.
+
+   VIGTIGT: Siden skal bruge @rendermode @(new InteractiveServerRenderMode(prerender: false)).
+   AdminSession er scoped og lever i browserforbindelsen (circuit'en). Ved prerendering kører
+   siden først uden forbindelse, hvor AdminSession altid er tom, så man ville blive sendt til
+   login, selvom man er logget ind.
+
+   18/11: Saed har gjort det sådan, at login huskes i browserens sessionStorage, så man ikke bliver
+   logget ud ved genindlæsning (F5). Derfor henter AdminOnly først det huskede login
+   (Session.RestoreAsync), før den tjekker. Det sker i OnAfterRenderAsync (ligesom i Saeds menu),
+   fordi browserens lager først kan læses, når siden er vist. Indtil da vises intet. *@
+
+@if (checkedLogin && Session.IsLoggedIn)
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool checkedLogin;
+
+    protected override void OnInitialized()
+    {
+        // Er man allerede logget ind i denne fane, vises siden med det samme.
+        checkedLogin = Session.IsLoggedIn;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || checkedLogin)
+        {
+            return;
+        }
+
+        await Session.RestoreAsync();
+        checkedLogin = true;
+
+        if (Session.IsLoggedIn)
+        {
+            StateHasChanged();
+        }
+        else
+        {
+            Nav.NavigateTo("/login");
+        }
+    }
+}

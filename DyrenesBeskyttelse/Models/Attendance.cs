@@ -2,7 +2,10 @@
 
 namespace DyrenesBeskyttelse.Components.Models;
 
-public class AttendanceSession
+// Én registrering af fremmøde (tjek ind og tjek ud).
+// 18/11: Hed før "AttendanceSession", men blev omdøbt til "Attendance", så den ikke forveksles med
+// AdminSession (hvem der er logget ind). Tabellen hedder nu "Attendances" (migrationen RenameAttendanceSessionToAttendance).
+public class Attendance
 {
     [Key]
     public long Id { get; set; }
@@ -16,7 +19,7 @@ public class AttendanceSession
     
     public long Duration { get; private set; } = 0;
 
-    public AttendanceSession(long id, DateTime sessionStart)
+    public Attendance(long id, DateTime sessionStart)
     {
         this.Id = id;   
         this.SessionStart = sessionStart;

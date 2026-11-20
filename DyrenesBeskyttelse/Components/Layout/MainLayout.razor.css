@@ -1,4 +1,4 @@
-.page {
+﻿.page {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -8,8 +8,11 @@ main {
     flex: 1;
 }
 
+/* Menuen i venstre side har samme farver som tablettens topbjælke (TabletLayout.razor.css):
+   creme baggrund og Dyrenes Beskyttelses røde farve. */
 .sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    background-color: #F5F0E6;
+    border-right: 3px solid #7E0D00;
 }
 
 .top-row {
@@ -30,6 +33,28 @@ main {
     .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
         text-decoration: underline;
     }
+
+/* 18/11: "Logget ind som ..." og "Log ud" oppe i højre hjørne */
+.logget-ind {
+    color: #1a1a1a;
+    margin-right: 1rem;
+    white-space: nowrap;
+}
+
+.log-ud-knap {
+    background: #fff;
+    color: #7E0D00;
+    border: 2px solid #7E0D00;
+    border-radius: 6px;
+    padding: 4px 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.log-ud-knap:hover {
+    background: #7E0D00;
+    color: #fff;
+}
 
     .top-row ::deep a:first-child {
         overflow: hidden;
@@ -96,3 +121,5 @@ main {
         right: 0.75rem;
         top: 0.5rem;
     }
+    
+    

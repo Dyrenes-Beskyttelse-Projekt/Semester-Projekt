@@ -58,7 +58,8 @@
         if (result.Success && result.Admin is not null)
         {
             Session.SignIn(result.Admin);
-            Nav.NavigateTo("/");
+            // Efter login sendes administratoren videre til administrationens forside (US-4 og US-7.0).
+            Nav.NavigateTo("/admin");
         }
         else
         {

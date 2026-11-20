@@ -1,4 +1,4 @@
-using DyrenesBeskyttelse.Components;
+﻿using DyrenesBeskyttelse.Components;
 using DyrenesBeskyttelse.Components.Services;
 using DyrenesBeskyttelse.Data;
 using DyrenesBeskyttelse.Services;
@@ -27,6 +27,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<VolunteerService>();
 builder.Services.AddScoped<AdminSession>();
+builder.Services.AddScoped<ReportService>();
 
 var app = builder.Build();
 
@@ -38,13 +39,13 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
 
-    // Opret en første admin, hvis der ingen er
-    if (!await db.Admins.AnyAsync())
-    {
-        var adminService = scope.ServiceProvider.GetRequiredService<AdminService>();
-        await adminService.CreateAdminAsync("Admin", "Admin", "Ukendt vej 1",
-            "admin@dyrenesbeskyttelse.dk", "12345678", "Admin123!");
-    }
+    // US-4.5: Testbrugere til lederen og frivilligkoordinatoren (se Data/TestData.cs).
+    // De erstatter den gamle testadministrator "Admin".
+    await TestData.SeedAdminsAsync(db, scope.ServiceProvider.GetRequiredService<AdminService>());
+
+    // Testfrivillige, så listen er længere, når programmet åbnes (se Data/TestData.cs).
+    await TestData.SeedVolunteersAsync(db);
+    await TestData.SeedAttendanceAsync(db);
     var volunteerService = scope.ServiceProvider
         .GetRequiredService<VolunteerService>();
 

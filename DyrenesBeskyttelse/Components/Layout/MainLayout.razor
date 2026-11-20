@@ -1,4 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
+@using DyrenesBeskyttelse.Services
+@inject AdminSession Session
+@inject NavigationManager Nav
 
 <div class="page">
     <div class="sidebar">
@@ -6,8 +10,15 @@
     </div>
 
     <main>
+        @* Linket "About" fra Blazor-skabelonen (til Microsofts dokumentation) er fjernet.
+           18/11 (US-10.3): Når man er logget ind, står "Logget ind som ..." og knappen "Log ud" her
+           oppe i højre hjørne i stedet for i menuen til venstre. *@
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            @if (Session.IsLoggedIn)
+            {
+                <span class="logget-ind">Logget ind som <strong>@Session.FullName</strong></span>
+                <button class="log-ud-knap" @onclick="LogUd">Log ud</button>
+            }
         </div>
 
         <article class="content px-4">
@@ -15,6 +26,27 @@
         </article>
     </main>
 </div>
+
+@code {
+    // Bjælken opdateres, når man logger ind eller ud, eller når et husket login hentes (F5).
+    protected override void OnInitialized()
+    {
+        Session.OnChange += OnChanged;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void LogUd()
+    {
+        Session.SignOut();
+        Nav.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        Session.OnChange -= OnChanged;
+    }
+}
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.

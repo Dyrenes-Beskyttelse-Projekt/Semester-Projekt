@@ -11,9 +11,9 @@ public class AppDbContext : DbContext
 
     public DbSet<Volunteer> Volunteers => Set<Volunteer>();
     public DbSet<Admin> Admins => Set<Admin>();
-    public DbSet<AttendanceSession> AttendanceSessions => Set<AttendanceSession>();
+    public DbSet<Attendance> Attendances => Set<Attendance>();
 
-    // Timesheet og TimesheetReport er ikke tabeller. De kan beregnes ud fra AttendanceSessions,
+    // Timesheet og TimesheetReport er ikke tabeller. De kan beregnes ud fra Attendances,
     // når der skal laves en rapport.
     
     

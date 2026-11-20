@@ -1,0 +1,167 @@
+﻿
+@page "/report"
+@* 18/11 (US-4.3): Kun for administratorer. <AdminOnly> + prerender: false, ligesom /admin.
+   TabletLayout er fjernet, så siden har menuen ligesom de andre administrationssider. *@
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using DyrenesBeskyttelse.Components.Shared
+
+@using DyrenesBeskyttelse.Components.Models
+@using DyrenesBeskyttelse.Services
+@using Microsoft.Extensions.DependencyInjection
+
+@inherits OwningComponentBase
+
+<PageTitle>LogCat · Extract Report</PageTitle>
+
+<AdminOnly>
+
+<h1 class="text-center mb-4">Extract Report</h1>
+@if (report == null)
+{
+    <div class="report-container">
+
+        <EditForm Model="@reportRequest"
+                  OnValidSubmit="ExtractReportAsync">
+
+            @* Your existing date inputs and button *@
+
+        </EditForm>
+
+        @* Your existing feedback message *@
+
+    </div>
+}
+else
+{
+    <Overview Report="report" />
+}
+
+<div class="report-container">
+
+    <EditForm Model="@reportRequest" OnValidSubmit="ExtractReportAsync">
+
+        <div class="mb-4">
+            <label class="form-label fs-4" for="startDate">
+                Start Date
+            </label>
+
+            <InputDate id="startDate"
+                       class="form-control form-control-lg"
+                       @bind-Value="reportRequest.StartDate" />
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fs-4" for="endDate">
+                End Date
+            </label>
+
+            <InputDate id="endDate"
+                       class="form-control form-control-lg"
+                       @bind-Value="reportRequest.EndDate" />
+        </div>
+
+        <div class="text-center mt-5">
+            <button type="submit"
+                    class="btn btn-primary btn-lg report-button"
+                    disabled="@busy">
+
+                @(busy ? "Extracting..." : "Extract Report")
+
+            </button>
+        </div>
+
+    </EditForm>
+
+    @if (message != null)
+    {
+        <div class="alert @(messageIsError ? "alert-danger" : "alert-success")
+                    fs-4 text-center mt-4">
+            @message
+        </div>
+    }
+
+</div>
+
+</AdminOnly>
+
+@code {
+
+    // Retrieves ReportService from this component's DI scope.
+    private ReportService ReportService =>
+        ScopedServices.GetRequiredService<ReportService>();
+
+    private ReportRequest reportRequest = new()
+    {
+        StartDate = DateTime.Today.AddDays(-7),
+        EndDate = DateTime.Today
+    };
+
+    private TimesheetReport? report;
+
+    private string? message;
+    private bool messageIsError;
+    private bool busy;
+
+    private async Task ExtractReportAsync()
+    {
+        if (busy)
+        {
+            return;
+        }
+
+        message = null;
+
+        if (reportRequest.StartDate > reportRequest.EndDate)
+        {
+            messageIsError = true;
+            message = "Start Date cannot be later than End Date.";
+            return;
+        }
+
+        busy = true;
+
+        try
+        {
+            // Generate the report using the selected dates.
+            report = await ReportService.GetReport(
+                reportRequest.StartDate,
+                reportRequest.EndDate
+            );
+
+        }
+        catch (Exception)
+        {
+            messageIsError = true;
+            message = "An error occurred while extracting the report.";
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    public class ReportRequest
+    {
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+    }
+}
+
+<style>
+    .report-container {
+        max-width: 650px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .report-button {
+        min-width: 250px;
+        min-height: 65px;
+        font-size: 1.5rem;
+    }
+
+    .form-control {
+        min-height: 60px;
+        font-size: 1.25rem;
+    }
+</style>
