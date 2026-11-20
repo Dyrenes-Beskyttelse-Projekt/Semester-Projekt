@@ -23,7 +23,7 @@ public class AdminSession
 
     public void SignIn(Admin admin)
     {
-        FullName = admin.getfullName();
+        FullName = admin.GetfullName();
         _ = _storage.SetAsync(Key, FullName);   // husk login i browseren
         OnChange?.Invoke();
     }

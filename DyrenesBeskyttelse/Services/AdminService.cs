@@ -44,28 +44,28 @@ public class AdminService
         // Først her bliver den frivillige skrevet til databasen (INSERT).
         await _db.SaveChangesAsync();
     }
-    
+
     public async Task<Admin> CreateAdminAsync(string firstName, string lastName, string address,
-            string email, string phoneNumber, string password)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException("E-mail må ikke være tom.", nameof(email));
-            if (string.IsNullOrWhiteSpace(password))
-                throw new ArgumentException("Kodeord må ikke være tomt.", nameof(password));
-    
-            email = email.Trim().ToLower();
-    
-            if (await _db.Admins.AnyAsync(a => a.Email == email))
-                throw new InvalidOperationException("Der findes allerede en admin med den e-mail.");
-    
-            var hash = BCrypt.Net.BCrypt.HashPassword(password);
-            var admin = new Admin(firstName, lastName, address, email, phoneNumber, hash);
-    
-            _db.Admins.Add(admin);
-            await _db.SaveChangesAsync();
-            return admin;
-        }
-    
+        string email, string phoneNumber, string password)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("E-mail må ikke være tom.", nameof(email));
+        if (string.IsNullOrWhiteSpace(password))
+            throw new ArgumentException("Kodeord må ikke være tomt.", nameof(password));
+
+        email = email.Trim().ToLower();
+
+        if (await _db.Admins.AnyAsync(a => a.Email == email))
+            throw new InvalidOperationException("Der findes allerede en admin med den e-mail.");
+
+        var hash = BCrypt.Net.BCrypt.HashPassword(password);
+        var admin = new Admin(firstName, lastName, address, email, phoneNumber, hash);
+
+        _db.Admins.Add(admin);
+        await _db.SaveChangesAsync();
+        return admin;
+    }
+
     public async Task<LoginResult> LoginAsync(string email, string password)
     {
         const string fejl = "Forkert e-mail eller kodeord.";
@@ -82,14 +82,14 @@ public class AdminService
 
         return new LoginResult(true, null, admin);
     }
-    
+
     // US-5.7: hent én frivillig (bruges til at forudfylde redigeringssiden)
     public async Task<Volunteer?> GetVolunteerByIdAsync(long id)
     {
         return await _db.Volunteers.FindAsync(id);
     }
 
-// US-5.7: opdater en frivillig (18/11: + startedBefore2026, US-6 "kan rettes bagefter")
+    // US-5.7: opdater en frivillig (18/11: + startedBefore2026, US-6 "kan rettes bagefter")
     public async Task<bool> UpdateVolunteerAsync(long id, string firstName, string lastName,
         string address, string email, string phoneNumber, bool startedBefore2026)
     {
@@ -103,7 +103,7 @@ public class AdminService
         await _db.SaveChangesAsync();
         return true;
     }
-    
+
     // Skift mellem aktiv og inaktiv
     public async Task<bool> SetVolunteerActiveAsync(long id, bool active)
     {
@@ -118,6 +118,14 @@ public class AdminService
         return true;
     }
     
-    
-    
+    // US-10.1: Registrer fremmøde fra papirliste
+    public async Task<bool> RegisterPaperAttendanceAsync(long volunteerId, DateTime start)
+    {
+        var volunteer = await _db.Volunteers.FindAsync(volunteerId);
+        if (volunteer == null) return false;
+        
+        volunteer.Sessions.Add(new Attendance(0, start) {SessionEnd = start});
+        await _db.SaveChangesAsync();
+        return true;
+    }
 }
