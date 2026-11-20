@@ -4,5 +4,6 @@
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::E4FB386A-339C-8C68-B6F1-2BAAADE6AD73::net10.0::DyrenesBeskyttelse.Tests.VolunteerServiceTabletTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::E4FB386A-339C-8C68-B6F1-2BAAADE6AD73::net10.0::DyrenesBeskyttelse.Tests.TabletVolunteerTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::E4FB386A-339C-8C68-B6F1-2BAAADE6AD73::net10.0::DyrenesBeskyttelse.Tests.InactiveVolunteerTests&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

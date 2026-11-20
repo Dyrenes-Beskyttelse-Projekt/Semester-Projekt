@@ -1,8 +1,10 @@
 ﻿using DyrenesBeskyttelse.Components.Models;
-using DyrenesBeskyttelse.Components.Services;
+using DyrenesBeskyttelse.Models;
 using DyrenesBeskyttelse.Data;
+using DyrenesBeskyttelse.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace DyrenesBeskyttelse.Tests;
 
@@ -80,11 +82,11 @@ public class InactiveVolunteerTests
         volunteer.CheckIn();
         db.Volunteers.Add(volunteer);
         await db.SaveChangesAsync();
-
+    
         volunteer.Deactivate();
         await db.SaveChangesAsync();
 
-        Assert.Equal(1, await db.AttendanceSessions.CountAsync());
+        Assert.Equal(1, await db.Attendances.CountAsync());
     }
 
     [Fact]
