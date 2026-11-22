@@ -34,23 +34,70 @@ else if (volunteers.Count == 0)
 }
 else
 {
-    <div class="name-grid">
-        @foreach (var volunteer in volunteers)
-        {
-            @* US-3.2: Er man tjekket ind, er knappen grøn og viser tidspunktet. *@
-            <button class="btn name-button @(volunteer.IsCheckedIn ? "btn-success" : "btn-outline-dark")"
-                    disabled="@busy"
-                    @onclick="() => Select(volunteer)">
-                @volunteer.FullName
-                @if (volunteer.CheckedInAt is DateTime checkedInAt)
-                {
-                    <span class="d-block fs-6">Tjekket ind kl. @checkedInAt.ToString("HH:mm")</span>
-                }
-            </button>
-        }
+    @* US-17.1: Søgefelt. oninput opdaterer listen ved hvert tastetryk. *@
+    <div class="d-flex gap-2 mb-4">
+        <input class="form-control form-control-lg fs-3"
+               placeholder="Søg efter dit navn"
+               @bind="searchText"
+               @bind:event="oninput"/>
+        <button class="btn btn-outline-dark btn-lg fs-3"
+                @onclick="() => searchText = null">
+            Ryd
+        </button>
     </div>
+
+    @* US-17.1: Besked, hvis ingen passer. *@
+    @if (!string.IsNullOrWhiteSpace(searchText) && !VisibleVolunteers.Any())
+    {
+        <p class="fs-4 text-center">Ingen navne passer til "@searchText".</p>
+    }
+
+    <div class="d-flex gap-4 align-items-start">
+
+        @* Venstre: Tjek ind, fylder al ledig plads *@
+        <div class="flex-grow-1 border rounded p-3">
+            <h2 class="text-center">Tjek ind</h2>
+            <div class="name-grid">
+                @foreach (var volunteer in NotCheckedIn)
+                {
+                    @* US-3.2: Er man tjekket ind, er knappen grøn og viser tidspunktet. *@
+                    <button class="btn name-button @(volunteer.IsCheckedIn ? "btn-success" : "btn-outline-dark")"
+                            disabled="@busy"
+                            @onclick="() => Select(volunteer)">
+                        @volunteer.FullName
+                        @if (volunteer.CheckedInAt is DateTime checkedInAt)
+                        {
+                            <span class="d-block fs-6">Tjekket ind kl. @checkedInAt.ToString("HH:mm")</span>
+                        }
+                    </button>
+                }
+            </div>
+        </div>
+
+        @* Højre: Tjekket ind, fast bredde og yderst til højre (US-18.1) *@
+        <div class="border border-success rounded p-2"
+             style="width: 19rem; flex-shrink: 0;">
+            <h3 class="text-center fs-5 text-success">Tjekket ind</h3>
+            <div class="name-grid">
+                @foreach (var volunteer in CheckedIn)
+                {
+                    <button class="btn name-button @(volunteer.IsCheckedIn ? "btn-success" : "btn-outline-dark")"
+                            disabled="@busy"
+                            @onclick="() => Select(volunteer)">
+                        @volunteer.FullName
+                        @if (volunteer.CheckedInAt is DateTime checkedInAt)
+                        {
+                            <span class="d-block fs-6">Tjekket ind kl. @checkedInAt.ToString("HH:mm")</span>
+                        }
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
     @* US-10.2: Knap til admin-login *@
-    <div style="display:flex; justify-content:flex-end; margin-top:2rem; padding-top:1rem; border-top:1px solid #e5e7eb;">
+    <div
+        style="display:flex; justify-content:flex-end; margin-top:2rem; padding-top:1rem; border-top:1px solid #e5e7eb;">
         <a href="login"
            style="background:#1f6fd0; color:#fff; border:1px solid #1f6fd0; padding:10px 24px; border-radius:6px; text-decoration:none; font-size:1rem;">
             Log ind som Admin
@@ -64,13 +111,25 @@ else
                        Volunteer="selected"
                        Busy="busy"
                        OnClickCancel="Cancel"
-                       OnClickConfirm="ConfirmAsync" />
+                       OnClickConfirm="ConfirmAsync"/>
+
 
 @code {
     private VolunteerService VolunteerService => ScopedServices.GetRequiredService<VolunteerService>();
 
     private List<TabletVolunteer>? volunteers;
     private TabletVolunteer? selected;
+
+    // US-17.1
+    private string? searchText;
+
+    private IEnumerable<TabletVolunteer> VisibleVolunteers => TabletVolunteer.SearchByName(volunteers ?? [], searchText);
+
+    // US-18.1
+    private IEnumerable<TabletVolunteer> NotCheckedIn => VisibleVolunteers.Where(v => !v.IsCheckedIn);
+    private IEnumerable<TabletVolunteer> CheckedIn => VisibleVolunteers.Where(v => v.IsCheckedIn);
+
+
     private string? message;
     private bool messageIsError;
 
