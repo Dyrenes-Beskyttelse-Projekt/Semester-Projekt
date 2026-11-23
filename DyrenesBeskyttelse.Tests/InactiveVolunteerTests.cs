@@ -1,13 +1,14 @@
-﻿using DyrenesBeskyttelse.Components.Models;
-using DyrenesBeskyttelse.Models;
+using DyrenesBeskyttelse.Components.Models;
+using DyrenesBeskyttelse.Components.Services;
 using DyrenesBeskyttelse.Data;
 using DyrenesBeskyttelse.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace DyrenesBeskyttelse.Tests;
 
+// Albin (US-7.2): Nye frivillige er aktive fra start, og inaktive forsvinder fra tabletten,
+// mens deres registreringer (Attendances) bevares. Kan gøres aktive igen (US-7).
 public class InactiveVolunteerTests
 {
     // Laver en tom database i hukommelsen til hver test.
@@ -39,7 +40,7 @@ public class InactiveVolunteerTests
     }
 
     [Fact]
-    public async Task NewVolunteer_IsShownOnTablet()
+    public async Task NewVolunteerIsShownOnTablet()
     {
         var (db, conn) = CreateDb();
         using var _ = conn;
@@ -54,7 +55,7 @@ public class InactiveVolunteerTests
     }
 
     [Fact]
-    public async Task InactiveVolunteer_IsHiddenFromTablet()
+    public async Task InactiveVolunteerIsHiddenFromTablet()
     {
         var (db, conn) = CreateDb();
         using var _ = conn;
@@ -73,7 +74,7 @@ public class InactiveVolunteerTests
     }
 
     [Fact]
-    public async Task InactiveVolunteer_KeepsAttendanceSessions()
+    public async Task InactiveVolunteerKeepsAttendanceSessions()
     {
         var (db, conn) = CreateDb();
         using var _ = conn;
@@ -82,7 +83,7 @@ public class InactiveVolunteerTests
         volunteer.CheckIn();
         db.Volunteers.Add(volunteer);
         await db.SaveChangesAsync();
-    
+
         volunteer.Deactivate();
         await db.SaveChangesAsync();
 
@@ -90,7 +91,7 @@ public class InactiveVolunteerTests
     }
 
     [Fact]
-    public async Task InactiveVolunteer_ReturnsToTablet_WhenActivatedAgain()
+    public async Task InactiveVolunteer_ReturnsToTabletWhenActivatedAgain()
     {
         var (db, conn) = CreateDb();
         using var _ = conn;
@@ -111,7 +112,7 @@ public class InactiveVolunteerTests
     }
 
     [Fact]
-    public async Task InactiveVolunteer_CannotCheckIn()
+    public async Task InactiveVolunteerCannotCheckIn()
     {
         var (db, conn) = CreateDb();
         using var _ = conn;

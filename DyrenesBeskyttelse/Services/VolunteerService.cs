@@ -106,7 +106,7 @@ public class VolunteerService
         await _db.SaveChangesAsync();
         return true;
     }
-    
+
     // Initialization. Simons automatiske check ud, hvis man har glemt at tjekke ud. 
     public async Task InitializeService(
         CancellationToken cancellationToken = default)
@@ -132,30 +132,14 @@ public class VolunteerService
 
         await _db.SaveChangesAsync(cancellationToken);
     }
-    
-   
 
-// Saed US-5.7: hent én frivillig (bruges til at forudfylde redigeringssiden)
+
+    // Saed US-5.7: hent én frivillig (bruges til at forudfylde redigeringssiden)
     public async Task<Volunteer?> GetVolunteerByIdAsync(long id)
     {
         return await _db.Volunteers.FindAsync(id);
     }
 
-// Saed US-5.7: opdater en frivillig
-    public async Task<bool> UpdateVolunteerAsync(long id, string firstName, string lastName,
-        string address, string email, string phoneNumber)
-    {
-        var volunteer = await _db.Volunteers.FindAsync(id);
-        if (volunteer == null)
-        {
-            return false;
-        }
-
-        // 18/11: UpdateDetails tager nu også StartedBefore2026. Her beholdes den nuværende værdi.
-        // OBS: Metoden bruges ikke. Redigeringssiden bruger AdminService.UpdateVolunteerAsync.
-        volunteer.UpdateDetails(firstName, lastName, address, email, phoneNumber, volunteer.StartedBefore2026);
-        await _db.SaveChangesAsync();
-        return true;
-    }
-    
+    // 20/11: UpdateVolunteerAsync er slettet herfra. Den var en kopi af AdminService.UpdateVolunteerAsync,
+    // som er den, redigeringssiden (RedigereFrivillig.razor) bruger.
 }

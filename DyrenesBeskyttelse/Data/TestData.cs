@@ -21,7 +21,7 @@ public static class TestData
     // Dyrenes Beskyttelse. Rigtige kodeord må aldrig stå her, fordi koden ligger på GitHub.
     private static readonly (string FirstName, string LastName, string Email, string Password)[] Admins =
     {
-        ("Leder", "Testbruger", "leder@dyrenesbeskyttelse.dk", "Leder123!"),
+        ("Leder", "Testbruger", "123", "123"),
         ("Frivilligkoordinator", "Testbruger", "frivilligkoordinator@dyrenesbeskyttelse.dk", "Koordinator123!"),
     };
 
