@@ -36,7 +36,7 @@ public class Volunteer
     // Eksisterende frivillige får false, indtil administrationen retter det.
     public bool StartedBefore2026 { get; set; }
 
-    public List<Attendance> Sessions { get; set; } = new List<Attendance>();
+    public List<Attendance> Sessions { get; set; }
 
     // US-6.1: startedBefore2026 er en valgfri parameter (standard false). Så virker de steder,
     // der allerede kalder constructoren med fem parametre (fx testene), uden at skulle ændres.

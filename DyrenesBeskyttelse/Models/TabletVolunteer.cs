@@ -32,5 +32,4 @@ public record TabletVolunteer(long Id, string FullName, DateTime? CheckedInAt)
             .Contains(searchText.Trim(), StringComparison.OrdinalIgnoreCase));
     }
 
-
 }
