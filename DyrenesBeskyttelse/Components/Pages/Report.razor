@@ -1,10 +1,9 @@
 ﻿
+@inject IJSRuntime Js
 @page "/report"
-@* 18/11 (US-4.3): Kun for administratorer. <AdminOnly> + prerender: false, ligesom /admin.
-   TabletLayout er fjernet, så siden har menuen ligesom de andre administrationssider. *@
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
-@using DyrenesBeskyttelse.Components.Shared
 
+@using DyrenesBeskyttelse.Components.Shared
 @using DyrenesBeskyttelse.Components.Models
 @using DyrenesBeskyttelse.Services
 @using Microsoft.Extensions.DependencyInjection
@@ -16,9 +15,23 @@
 
 <AdminOnly>
 
-<h1 class="text-center mb-4">Extract Report</h1>
-@if (report == null)
-{
+    <h1 class="text-center mb-4">Extract Report</h1>
+
+    @if (report != null)
+    {
+        <Overview Report="report" />
+
+        <div class="text-center mt-4">
+            <button type="button"
+                    class="btn btn-success btn-lg report-button"
+                    @onclick="ExportReportAsync"
+                    disabled="@busy">
+
+                @(busy ? "Processing..." : "Download Excel")
+            </button>
+        </div>
+    }
+
     <div class="report-container">
 
         <EditForm Model="@reportRequest"
@@ -55,33 +68,49 @@ else
             <label class="form-label fs-4" for="endDate">
                 End Date
             </label>
+            <div class="mb-4">
+                <label class="form-label fs-4" for="selectedMonth">
+                    Select Month
+                </label>
 
-            <InputDate id="endDate"
-                       class="form-control form-control-lg"
-                       @bind-Value="reportRequest.EndDate" />
-        </div>
+                <InputSelect id="selectedMonth"
+                             class="form-select form-select-lg"
+                             @bind-Value="selectedMonth"
+                             disabled="@busy">
 
-        <div class="text-center mt-5">
-            <button type="submit"
-                    class="btn btn-primary btn-lg report-button"
-                    disabled="@busy">
+                    <option value="">-- Select a month --</option>
 
-                @(busy ? "Extracting..." : "Extract Report")
+                    @foreach (var month in completedMonths)
+                    {
+                        <option value="@month.Month">
+                            @month.Name
+                        </option>
+                    }
 
-            </button>
-        </div>
+                </InputSelect>
+            </div>
 
-    </EditForm>
+            <div class="text-center mt-5">
+                <button type="submit"
+                        class="btn btn-primary btn-lg report-button"
+                        disabled="@(busy || selectedMonth == null || completedMonths.Count == 0)">
 
-    @if (message != null)
-    {
-        <div class="alert @(messageIsError ? "alert-danger" : "alert-success")
-                    fs-4 text-center mt-4">
-            @message
-        </div>
-    }
+                    @(busy ? "Extracting..." : "Extract Report")
 
-</div>
+                </button>
+            </div>
+
+        </EditForm>
+
+        @if (message != null)
+        {
+            <div class="alert @(messageIsError ? "alert-danger" : "alert-success")
+                        fs-4 text-center mt-4">
+                @message
+            </div>
+        }
+
+    </div>
 
 </AdminOnly>
 
@@ -112,17 +141,40 @@ else
     private ReportService ReportService =>
         ScopedServices.GetRequiredService<ReportService>();
 
-    private ReportRequest reportRequest = new()
-    {
-        StartDate = DateTime.Today.AddDays(-7),
-        EndDate = DateTime.Today
-    };
+    private ReportRequest reportRequest = new();
 
     private TimesheetReport? report;
 
     private string? message;
     private bool messageIsError;
     private bool busy;
+
+    // Available completed months.
+    private List<MonthOption> completedMonths = new();
+
+    // Currently selected month.
+    private int? selectedMonth;
+
+    protected override void OnInitialized()
+    {
+        var today = DateTime.Today;
+
+        completedMonths = Enumerable.Range(1, 12)
+            .Where(month => month < today.Month)
+            .Select(month =>
+            {
+                var startDate = new DateTime(today.Year, month, 1);
+
+                return new MonthOption
+                {
+                    Month = month,
+                    Name = startDate.ToString("MMMM yyyy"),
+                    StartDate = startDate,
+                    EndDate = startDate.AddMonths(1).AddDays(-1)
+                };
+            })
+            .ToList();
+    }
 
     private async Task ExtractReportAsync()
     {
@@ -132,24 +184,38 @@ else
         }
 
         message = null;
+        messageIsError = false;
 
-        if (reportRequest.StartDate > reportRequest.EndDate)
+        if (selectedMonth == null)
         {
             messageIsError = true;
-            message = "Start Date cannot be later than End Date.";
+            message = "Please select a month.";
             return;
         }
+
+        // Resolve the selected month into its date range.
+        var selected = completedMonths
+            .FirstOrDefault(m => m.Month == selectedMonth);
+
+        if (selected == null)
+        {
+            messageIsError = true;
+            message = "The selected month is not available.";
+            return;
+        }
+
+        reportRequest.StartDate = selected.StartDate;
+        reportRequest.EndDate = selected.EndDate;
 
         busy = true;
 
         try
         {
-            // Generate the report using the selected dates.
+            // Generate the report using the selected month's dates.
             report = await ReportService.GetReport(
                 reportRequest.StartDate,
                 reportRequest.EndDate
             );
-
         }
         catch (Exception)
         {
@@ -161,10 +227,58 @@ else
             busy = false;
         }
     }
+    
+    private async Task ExportReportAsync()
+    {
+        if (report == null || busy)
+        {
+            return;
+        }
+
+        busy = true;
+
+        try
+        {
+            // Generate Excel file
+            byte[] excelFile = ReportService.GenerateExcelReport(report);
+
+            // Generate filename based on report period
+            string fileName =
+                $"TimesheetReport_{report.StartDate:yyyy-MM}.xlsx";
+
+            // Trigger browser download
+            await Js.InvokeVoidAsync(
+                "downloadFile",
+                fileName,
+                Convert.ToBase64String(excelFile)
+            );
+        }
+        catch (Exception)
+        {
+            messageIsError = true;
+            message = "An error occurred while generating the Excel file.";
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    public class MonthOption
+    {
+        public int Month { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+
+        public DateTime StartDate { get; set; }
+
+        public DateTime EndDate { get; set; }
+    }
 
     public class ReportRequest
     {
         public DateTime StartDate { get; set; }
+
         public DateTime EndDate { get; set; }
     }
 }
@@ -182,8 +296,10 @@ else
         font-size: 1.5rem;
     }
 
-    .form-control {
+    .form-control,
+    .form-select {
         min-height: 60px;
         font-size: 1.25rem;
     }
 </style>
+
