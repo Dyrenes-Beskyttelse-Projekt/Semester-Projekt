@@ -6,6 +6,13 @@ namespace DyrenesBeskyttelse.Components.Services;
 
 public record LoginResult(bool Success, string? ErrorMessage = null, Admin? Admin = null);
 
+public enum PaperAttendanceResult
+{
+    Registered,
+    VolunteerNotFound,
+    AlreadyCheckedIn
+}
+
 public class AdminService
 {
     private AppDbContext _db;
@@ -117,15 +124,21 @@ public class AdminService
         await _db.SaveChangesAsync();
         return true;
     }
-    
+
     // US-10.1: Registrer fremmøde fra papirliste
-    public async Task<bool> RegisterPaperAttendanceAsync(long volunteerId, DateTime start)
+    public async Task<PaperAttendanceResult> RegisterPaperAttendanceAsync(long volunteerId, DateTime start)
     {
-        var volunteer = await _db.Volunteers.FindAsync(volunteerId);
-        if (volunteer == null) return false;
+        var volunteer = await _db.Volunteers
+            .Include(v => v.Sessions)
+            .FirstOrDefaultAsync(v => v.Id == volunteerId);
         
-        volunteer.Sessions.Add(new Attendance(0, start) {SessionEnd = start});
+        if (volunteer == null) return PaperAttendanceResult.VolunteerNotFound;
+
+        if (volunteer.Sessions.Any(s => s.SessionEnd == null))
+            return PaperAttendanceResult.AlreadyCheckedIn;
+
+        volunteer.Sessions.Add(new Attendance(0, start) { SessionEnd = start });
         await _db.SaveChangesAsync();
-        return true;
+        return PaperAttendanceResult.Registered;
     }
 }
