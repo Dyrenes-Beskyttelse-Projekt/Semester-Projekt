@@ -29,6 +29,7 @@ public class TimesheetReport
     public List<Timesheet> GetSortedTimesheets()
     {
         return Timesheets
+            .Where(t => t.IsActive)
             .OrderByDescending(t => t.BreaksActivityRule)
             .ThenBy(t => t.Sessions.Select(s => s.SessionStart.Date).Distinct().Count())
             .ThenBy(t => t.Name)
