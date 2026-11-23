@@ -24,4 +24,20 @@ public class TimesheetReport
     {
         return new TimesheetReport(startDate, endDate, timesheets);
     }
+    
+    // US-8.8: Dem der bryder reglen først, derefter færrest fremmødedage, derefter alfabetisk.
+    public List<Timesheet> GetSortedTimesheets()
+    {
+        return Timesheets
+            .OrderByDescending(t => t.BreaksActivityRule)
+            .ThenBy(t => t.Sessions.Select(s => s.SessionStart.Date).Distinct().Count())
+            .ThenBy(t => t.Name)
+            .ToList();
+    }
+
+// Til linjen "X af Y overholder ikke aktivitetsreglen".
+    public int CountBreakingRule()
+    {
+        return Timesheets.Count(t => t.BreaksActivityRule);
+    }
 }
