@@ -1,4 +1,5 @@
 ﻿
+@inject IJSRuntime Js
 @page "/report"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -18,6 +19,16 @@
     @if (report != null)
     {
         <Overview Report="report" />
+
+        <div class="text-center mt-4">
+            <button type="button"
+                    class="btn btn-success btn-lg report-button"
+                    @onclick="ExportReportAsync"
+                    disabled="@busy">
+
+                @(busy ? "Processing..." : "Download Excel")
+            </button>
+        </div>
     }
 
     <div class="report-container">
@@ -157,6 +168,42 @@
         {
             messageIsError = true;
             message = "An error occurred while extracting the report.";
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+    
+    private async Task ExportReportAsync()
+    {
+        if (report == null || busy)
+        {
+            return;
+        }
+
+        busy = true;
+
+        try
+        {
+            // Generate Excel file
+            byte[] excelFile = ReportService.GenerateExcelReport(report);
+
+            // Generate filename based on report period
+            string fileName =
+                $"TimesheetReport_{report.StartDate:yyyy-MM}.xlsx";
+
+            // Trigger browser download
+            await Js.InvokeVoidAsync(
+                "downloadFile",
+                fileName,
+                Convert.ToBase64String(excelFile)
+            );
+        }
+        catch (Exception)
+        {
+            messageIsError = true;
+            message = "An error occurred while generating the Excel file.";
         }
         finally
         {
