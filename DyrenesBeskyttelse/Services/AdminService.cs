@@ -38,7 +38,10 @@ public class AdminService
     {
         var volunteers = await _db.Volunteers.Include(v => v.Sessions).ToListAsync();
         var danish = StringComparer.Create(new System.Globalization.CultureInfo("da-DK"), true);
-        return volunteers.OrderBy(v => v.GetFullName(), danish).ToList();
+        return volunteers
+            .OrderByDescending(v => v.IsActive)
+            .ThenBy(v => v.GetFullName(), danish)
+            .ToList();
     }
 
     // US-6.2 (Julie): startedBefore2026 kommer fra afkrydsningsfeltet "Startet før 2026" i formularen.
@@ -120,6 +123,25 @@ public class AdminService
 
         if (active) volunteer.Activate();
         else volunteer.Deactivate();
+
+        await _db.SaveChangesAsync();
+        return true;
+    }
+    // US-19.1: Slet en frivillig. Kun inaktive kan slettes, og deres registreringer
+    // slettes også. Returnerer false, hvis den frivillige ikke findes eller stadig er aktiv.
+    public async Task<bool> DeleteVolunteerAsync(long id)
+    {
+        var volunteer = await _db.Volunteers
+            .Include(v => v.Sessions)
+            .FirstOrDefaultAsync(v => v.Id == id);
+
+        if (volunteer == null || volunteer.IsActive)
+        {
+            return false;
+        }
+
+        _db.RemoveRange(volunteer.Sessions);
+        _db.Volunteers.Remove(volunteer);
 
         await _db.SaveChangesAsync();
         return true;
