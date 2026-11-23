@@ -1,5 +1,4 @@
 ﻿
-@inject IJSRuntime Js
 @page "/report"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -10,6 +9,7 @@
 @using DyrenesBeskyttelse.Components.Services
 
 @inherits OwningComponentBase
+@inject IJSRuntime Js
 
 <PageTitle>LogCat · Extract Report</PageTitle>
 
@@ -17,9 +17,12 @@
 
     <h1 class="text-center mb-4">Extract Report</h1>
 
+    @* Only render the overview when a report exists. *@
     @if (report != null)
     {
-        <Overview Report="report" />
+        <Overview Report="report"
+                  OnDeactivate="DeactivateAsync"
+                  Busy="busy" />
 
         <div class="text-center mt-4">
             <button type="button"
@@ -28,6 +31,7 @@
                     disabled="@busy">
 
                 @(busy ? "Processing..." : "Download Excel")
+
             </button>
         </div>
     }
@@ -37,37 +41,6 @@
         <EditForm Model="@reportRequest"
                   OnValidSubmit="ExtractReportAsync">
 
-            @* Your existing date inputs and button *@
-
-        </EditForm>
-
-        @* Your existing feedback message *@
-
-    </div>
-}
-else
-{
-    <Overview Report="report" OnDeactivate="DeactivateAsync" Busy="busy" />
-}
-
-<div class="report-container">
-
-    <EditForm Model="@reportRequest" OnValidSubmit="ExtractReportAsync">
-
-        <div class="mb-4">
-            <label class="form-label fs-4" for="startDate">
-                Start Date
-            </label>
-
-            <InputDate id="startDate"
-                       class="form-control form-control-lg"
-                       @bind-Value="reportRequest.StartDate" />
-        </div>
-
-        <div class="mb-4">
-            <label class="form-label fs-4" for="endDate">
-                End Date
-            </label>
             <div class="mb-4">
                 <label class="form-label fs-4" for="selectedMonth">
                     Select Month
@@ -104,8 +77,7 @@ else
 
         @if (message != null)
         {
-            <div class="alert @(messageIsError ? "alert-danger" : "alert-success")
-                        fs-4 text-center mt-4">
+            <div class="alert @(messageIsError ? "alert-danger" : "alert-success") fs-4 text-center mt-4">
                 @message
             </div>
         }
@@ -115,29 +87,10 @@ else
 </AdminOnly>
 
 @code {
-    
+
     private AdminService AdminService =>
         ScopedServices.GetRequiredService<AdminService>();
 
-    private async Task DeactivateAsync(long volunteerId)
-    {
-        if (busy || report == null) return;
-        busy = true;
-
-        try
-        {
-            await AdminService.SetVolunteerActiveAsync(volunteerId, false);
-
-            // Hent rapporten igen for samme periode, så rækken viser "Inaktiv"
-            report = await ReportService.GetReport(report.StartDate, report.EndDate);
-        }
-        finally
-        {
-            busy = false;
-        }
-    }
-
-    // Retrieves ReportService from this component's DI scope.
     private ReportService ReportService =>
         ScopedServices.GetRequiredService<ReportService>();
 
@@ -211,14 +164,15 @@ else
 
         try
         {
-            // Generate the report using the selected month's dates.
             report = await ReportService.GetReport(
                 reportRequest.StartDate,
                 reportRequest.EndDate
             );
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine($"Report extraction error: {ex}");
+
             messageIsError = true;
             message = "An error occurred while extracting the report.";
         }
@@ -227,7 +181,41 @@ else
             busy = false;
         }
     }
-    
+
+    private async Task DeactivateAsync(long volunteerId)
+    {
+        if (busy || report == null)
+        {
+            return;
+        }
+
+        busy = true;
+        message = null;
+
+        try
+        {
+            await AdminService.SetVolunteerActiveAsync(volunteerId, false);
+
+            // Reload the report for the same period so the row
+            // reflects the volunteer's updated status.
+            report = await ReportService.GetReport(
+                report.StartDate,
+                report.EndDate
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Volunteer deactivation error: {ex}");
+
+            messageIsError = true;
+            message = "An error occurred while updating the volunteer.";
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
     private async Task ExportReportAsync()
     {
         if (report == null || busy)
@@ -236,27 +224,38 @@ else
         }
 
         busy = true;
+        message = null;
+        messageIsError = false;
 
         try
         {
-            // Generate Excel file
+            // Generate the Excel file using ClosedXML.
             byte[] excelFile = ReportService.GenerateExcelReport(report);
 
-            // Generate filename based on report period
+            if (excelFile.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    "The generated Excel file was empty."
+                );
+            }
+
+            // Generate filename based on the report period.
             string fileName =
                 $"TimesheetReport_{report.StartDate:yyyy-MM}.xlsx";
 
-            // Trigger browser download
+            // Trigger the browser download.
             await Js.InvokeVoidAsync(
                 "downloadFile",
                 fileName,
                 Convert.ToBase64String(excelFile)
             );
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine($"Excel export error: {ex}");
+
             messageIsError = true;
-            message = "An error occurred while generating the Excel file.";
+            message = $"Excel export failed: {ex.Message}";
         }
         finally
         {
@@ -302,4 +301,3 @@ else
         font-size: 1.25rem;
     }
 </style>
-

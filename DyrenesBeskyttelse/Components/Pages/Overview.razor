@@ -1,67 +1,103 @@
-﻿@using DyrenesBeskyttelse.Components.Models
+﻿
+@using DyrenesBeskyttelse.Components.Models
 @using DyrenesBeskyttelse.Models
 
-@* US-8.8: dem der bryder reglen først, derefter færrest fremmøder først *@
-@{
+@if (Report == null)
+{
+    <p class="text-muted">No report available.</p>
+}
+else
+{
+    @* US-8.8: Volunteers breaking the rule first,
+       followed by those with the fewest attendances. *@
+
     var sorted = Report.GetSortedTimesheets();
     var antalBrudt = Report.CountBreakingRule();
-}
 
-<p class="fw-semibold">@antalBrudt af @sorted.Count overholder ikke aktivitetsreglen</p>
+    <p class="fw-semibold">
+        @antalBrudt af @sorted.Count overholder ikke aktivitetsreglen
+    </p>
 
-<table class="table table-striped align-middle admin-tabel">
-    <thead>
-        <tr>
-            <th>Navn</th>
-            <th>Fremmøde</th>
-            <th>Aktivitetsregel</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var t in sorted)
-        {
-            @* table-danger giver hele rækken rød baggrund (virker også sammen med table-striped) *@
-            <tr class="@(t.BreaksActivityRule ? "table-danger" : "table-success")">
-                <td>@t.Name</td>
-                <td>
-                    @if (t.Sessions.Count == 0)
-                    {
-                        <span>0 dage</span>
-                    }
-                    else
-                    {
-                        @string.Join(", ", t.Sessions.Select(s => s.SessionStart.ToString("dd/MM")).Distinct())
-                    }
-                </td>
-                <td>
-                    @(t.BreaksActivityRule ? "overholdes ikke" : "overholdes")
-                    <span class="text-muted">(@t.RuleText)</span>
-                </td>
-                <td>
-                    @* US-8.11: kun ved dem der bryder reglen *@
-                    @if (t.BreaksActivityRule)
-                    {
-                        @if (t.IsActive)
+    <table class="table table-striped align-middle admin-tabel">
+        <thead>
+            <tr>
+                <th>Navn</th>
+                <th>Fremmøde</th>
+                <th>Aktivitetsregel</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var t in sorted)
+            {
+                @* US-8.11: Only show the deactivation option
+                   for volunteers who break the activity rule. *@
+
+                <tr class="@(t.BreaksActivityRule ? "table-danger" : "table-success")">
+
+                    <td>@t.Name</td>
+
+                    <td>
+                        @if (t.Sessions.Count == 0)
                         {
-                            <button class="btn btn-sm btn-outline-dark" disabled="@Busy"
-                                    @onclick="() => OnDeactivate.InvokeAsync(t.VolunteerId)">
-                                Gør inaktiv
-                            </button>
+                            <span>0 dage</span>
                         }
                         else
                         {
-                            <span class="text-muted">Inaktiv</span>
+                            @string.Join(
+                                ", ",
+                                t.Sessions
+                                    .Select(s => s.SessionStart.ToString("dd/MM"))
+                                    .Distinct()
+                            )
                         }
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                    </td>
+
+                    <td>
+                        @(t.BreaksActivityRule
+                            ? "overholdes ikke"
+                            : "overholdes")
+
+                        <span class="text-muted">
+                            (@t.RuleText)
+                        </span>
+                    </td>
+
+                    <td>
+                        @if (t.BreaksActivityRule)
+                        {
+                            @if (t.IsActive)
+                            {
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-dark"
+                                        disabled="@Busy"
+                                        @onclick="() => OnDeactivate.InvokeAsync(t.VolunteerId)">
+
+                                    Gør inaktiv
+
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Inaktiv</span>
+                            }
+                        }
+                    </td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 @code {
-    [Parameter] public TimesheetReport Report { get; set; } = default!;
-    [Parameter] public EventCallback<long> OnDeactivate { get; set; }
-    [Parameter] public bool Busy { get; set; }
+    [Parameter, EditorRequired]
+    public TimesheetReport? Report { get; set; }
+
+    [Parameter]
+    public EventCallback<long> OnDeactivate { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
 }
