@@ -109,8 +109,13 @@
         if (_date.Date > DateTime.Today) { _message = "Datoen må ikke ligge i fremtiden."; return; }
 
         _busy = true;
-        var ok = await AdminService.RegisterPaperAttendanceAsync(_selectedId, _date);
-        _message = ok ? "Fremmøde gemt." : "Kunne ikke gemme.";
+        var result = await AdminService.RegisterPaperAttendanceAsync(_selectedId, _date);
+        _message = result switch
+        {
+            PaperAttendanceResult.Registered => "Fremmøde gemt.",
+            PaperAttendanceResult.AlreadyCheckedIn => "Den frivillige er allerede tjekket ind.",
+            _ => "Frivillig findes ikke."
+        };
         _busy = false;
     }
 

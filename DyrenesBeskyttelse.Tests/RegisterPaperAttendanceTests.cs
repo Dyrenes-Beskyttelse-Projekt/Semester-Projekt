@@ -51,7 +51,7 @@ public class RegisterPaperAttendanceTests : IDisposable
 
         var ok = await _service.RegisterPaperAttendanceAsync(volunteer.Id, date);
 
-        Assert.True(ok);
+        Assert.Equal(PaperAttendanceResult.Registered, ok);
         var attendance = await _db.Attendances.SingleAsync();
         Assert.Equal(date, attendance.SessionStart);
         Assert.Equal(volunteer.Id, _db.Entry(attendance).Property<long?>("VolunteerId").CurrentValue);
@@ -75,7 +75,23 @@ public class RegisterPaperAttendanceTests : IDisposable
     {
         var ok = await _service.RegisterPaperAttendanceAsync(999, new DateTime(2026, 10, 5));
 
-        Assert.False(ok);
+        Assert.Equal(PaperAttendanceResult.VolunteerNotFound, ok);
         Assert.Empty(await _db.Attendances.ToListAsync());
+    }
+    
+    [Fact]
+    public async Task RegisterPaperAttendance_AlreadyCheckedIn_ReturnsAlreadyCheckedIn_AndSavesNothing()
+    {
+        var volunteer = await CreateVolunteerAsync();
+
+        // Åben session: SessionEnd er null, som når man er tjekket ind på tabletten
+        volunteer.Sessions.Add(new Attendance(0, new DateTime(2026, 10, 4)));
+        await _db.SaveChangesAsync();
+
+        var result = await _service.RegisterPaperAttendanceAsync(volunteer.Id, new DateTime(2026, 10, 5));
+
+        Assert.Equal(PaperAttendanceResult.AlreadyCheckedIn, result);
+        // Kun den åbne session fra Arrange må findes, der er ikke tilføjet en ny
+        Assert.Single(await _db.Attendances.ToListAsync());
     }
 }

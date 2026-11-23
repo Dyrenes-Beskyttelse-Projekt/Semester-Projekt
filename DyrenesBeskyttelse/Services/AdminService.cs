@@ -6,6 +6,13 @@ namespace DyrenesBeskyttelse.Components.Services;
 
 public record LoginResult(bool Success, string? ErrorMessage = null, Admin? Admin = null);
 
+public enum PaperAttendanceResult
+{
+    Registered,
+    VolunteerNotFound,
+    AlreadyCheckedIn
+}
+
 public class AdminService
 {
     private AppDbContext _db;
@@ -27,15 +34,11 @@ public class AdminService
     // hvem der er tjekket ind lige nu. Sorteres efter navn med dansk alfabet (Æ, Ø, Å til sidst). Det sker
     // efter ToListAsync, fordi SQLite ikke kender den danske rækkefølge.
     // (18/11: Saed og Julie havde begge lavet en metode med dette navn. De er slået sammen til én.)
-    // US-19.0: Aktive står først og inaktive nederst. Inden for hver gruppe sorteres der efter navn.
     public async Task<List<Volunteer>> GetAllVolunteersAsync()
     {
         var volunteers = await _db.Volunteers.Include(v => v.Sessions).ToListAsync();
         var danish = StringComparer.Create(new System.Globalization.CultureInfo("da-DK"), true);
-        return volunteers
-            .OrderByDescending(v => v.IsActive)
-            .ThenBy(v => v.GetFullName(), danish)
-            .ToList();
+        return volunteers.OrderBy(v => v.GetFullName(), danish).ToList();
     }
 
     // US-6.2 (Julie): startedBefore2026 kommer fra afkrydsningsfeltet "Startet før 2026" i formularen.
@@ -121,35 +124,21 @@ public class AdminService
         await _db.SaveChangesAsync();
         return true;
     }
-    // US-19.1: Slet en frivillig. Kun inaktive kan slettes, og deres registreringer (Attendances)
-    // slettes også. Returnerer false, hvis den frivillige ikke findes eller stadig er aktiv.
-    public async Task<bool> DeleteVolunteerAsync(long id)
+
+    // US-10.1: Registrer fremmøde fra papirliste
+    public async Task<PaperAttendanceResult> RegisterPaperAttendanceAsync(long volunteerId, DateTime start)
     {
         var volunteer = await _db.Volunteers
             .Include(v => v.Sessions)
-            .FirstOrDefaultAsync(v => v.Id == id);
-
-        if (volunteer == null || volunteer.IsActive)
-        {
-            return false;
-        }
-
-        // Registreringerne slettes først. Relationen er valgfri (VolunteerId kan være null),
-        // så databasen sletter dem ikke automatisk.
-        _db.RemoveRange(volunteer.Sessions);
-        _db.Volunteers.Remove(volunteer);
-
-        await _db.SaveChangesAsync();
-        return true;
-    }
-    // US-10.1: Registrer fremmøde fra papirliste
-    public async Task<bool> RegisterPaperAttendanceAsync(long volunteerId, DateTime start)
-    {
-        var volunteer = await _db.Volunteers.FindAsync(volunteerId);
-        if (volunteer == null) return false;
+            .FirstOrDefaultAsync(v => v.Id == volunteerId);
         
-        volunteer.Sessions.Add(new Attendance(0, start) {SessionEnd = start});
+        if (volunteer == null) return PaperAttendanceResult.VolunteerNotFound;
+
+        if (volunteer.Sessions.Any(s => s.SessionEnd == null))
+            return PaperAttendanceResult.AlreadyCheckedIn;
+
+        volunteer.Sessions.Add(new Attendance(0, start) { SessionEnd = start });
         await _db.SaveChangesAsync();
-        return true;
+        return PaperAttendanceResult.Registered;
     }
 }

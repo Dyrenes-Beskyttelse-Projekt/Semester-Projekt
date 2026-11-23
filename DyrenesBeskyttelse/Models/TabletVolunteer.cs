@@ -21,4 +21,15 @@ public record TabletVolunteer(long Id, string FullName, DateTime? CheckedInAt)
 
     public static List<TabletVolunteer> SortByName(IEnumerable<TabletVolunteer> volunteers) =>
         volunteers.OrderBy(v => v.FullName, DanishOrder).ToList();
+
+    public static IEnumerable<TabletVolunteer> SearchByName(
+        IEnumerable<TabletVolunteer> volunteers, string? searchText)
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+            return volunteers;
+        
+        return volunteers.Where(v => v.FullName
+            .Contains(searchText.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
 }
