@@ -6,6 +6,7 @@
 @inherits OwningComponentBase<AdminService>
 @using System.ComponentModel.DataAnnotations
 @using DyrenesBeskyttelse.Components.Services
+@inject NavigationManager Nav
 
 <PageTitle>Rediger frivillig</PageTitle>
 
@@ -44,7 +45,7 @@
     .knap-primaer:hover { background: #5E0A00; }
     .knap-sekundaer {
         background: #fff; color: #495057; border: 1px solid #ced4da;
-        padding: 11px 26px; border-radius: 6px; font-size: 1rem; text-decoration: none;
+        padding: 11px 26px; border-radius: 6px; font-size: 1rem; text-decoration: none; cursor: pointer;
     }
     .knap-sekundaer:hover { background: #f1f3f5; color: #212529; }
 
@@ -52,6 +53,26 @@
         margin-top: 24px; padding: 14px 18px; border-radius: 6px;
         background: #e6f4ea; color: #1e6b36; border: 1px solid #b7dfc4;
     }
+
+    /* US-19.2: "Slet frivillig" og bekræftelsesboks */
+    .slet-sektion { margin-top: 36px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+    .knap-slet {
+        background: #fff; color: #b02a37; border: 2px solid #b02a37;
+        padding: 11px 26px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer;
+    }
+    .knap-slet:hover { background: #b02a37; color: #fff; }
+    .knap-slet-bekraeft {
+        background: #b02a37; color: #fff; border: 2px solid #b02a37;
+        padding: 11px 26px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer;
+    }
+    .knap-slet-bekraeft:hover { background: #8c1f2a; border-color: #8c1f2a; }
+    .slet-boks {
+        padding: 18px 22px; border-radius: 6px;
+        background: #fdf0f0; border: 2px solid #b02a37; color: #1a1a1a;
+    }
+    .slet-boks h2 { font-size: 1.2rem; color: #b02a37; margin: 0 0 10px 0; }
+    .slet-boks p { margin: 0 0 8px 0; }
+    .slet-boks .opret-knapper { border-top: none; padding-top: 0; margin-top: 16px; }
 </style>
 
 <AdminOnly>
@@ -115,6 +136,34 @@
                 <a href="/admin" class="knap-sekundaer">Annuller</a>
             </div>
         </EditForm>
+
+        @* US-19.2: "Slet frivillig" vises kun for inaktive. Før sletningen kommer en bekræftelsesboks. *@
+        @if (erInaktiv)
+        {
+            <div class="slet-sektion">
+                @if (!visSletBekraeftelse)
+                {
+                    <button type="button" class="knap-slet" @onclick="() => visSletBekraeftelse = true">Slet frivillig</button>
+                }
+                else
+                {
+                    <div class="slet-boks">
+                        <h2>Slet @navn?</h2>
+                        <p>Sletningen <strong>kan ikke fortrydes</strong>. Den frivillige og alle vedkommendes registreringer af fremmøde bliver slettet for altid.</p>
+                        <p>Du kan i stedet lade personen være inaktiv. Så står vedkommende ikke på tabletten, og historikken bevares.</p>
+                        <div class="opret-knapper">
+                            <button type="button" class="knap-slet-bekraeft" disabled="@sletter" @onclick="SletAsync">Ja, slet for altid</button>
+                            <button type="button" class="knap-sekundaer" disabled="@sletter" @onclick="() => visSletBekraeftelse = false">Annuller, behold som inaktiv</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (sletFejl != null)
+        {
+            <p class="opret-fejl">@sletFejl</p>
+        }
     }
 
     @if (gemt)
@@ -131,6 +180,13 @@
     private bool gemt;
     private bool ikkeFundet;
 
+    // US-19.2
+    private bool erInaktiv;
+    private bool visSletBekraeftelse;
+    private bool sletter;
+    private string? sletFejl;
+    private string navn = "";
+
     protected override async Task OnInitializedAsync()
     {
         var v = await Service.GetVolunteerByIdAsync(Id);
@@ -139,6 +195,9 @@
             ikkeFundet = true;
             return;
         }
+
+        erInaktiv = !v.IsActive;
+        navn = v.FirstName + " " + v.LastName;
 
         // Forudfyld formularen med de nuværende oplysninger
         formular = new RedigerFormular
@@ -156,6 +215,31 @@
     {
         gemt = await Service.UpdateVolunteerAsync(Id, formular!.FirstName, formular.LastName,
             formular.Address, formular.Email, formular.PhoneNumber, formular.StartedBefore2026);
+    }
+
+    // US-19.2: Sletter via AdminService.DeleteVolunteerAsync (US-19.1) og sender tilbage til /admin.
+    private async Task SletAsync()
+    {
+        if (sletter) return;
+        sletter = true;
+        sletFejl = null;
+        try
+        {
+            var ok = await Service.DeleteVolunteerAsync(Id);
+            if (ok)
+            {
+                Nav.NavigateTo("/admin");
+            }
+            else
+            {
+                visSletBekraeftelse = false;
+                sletFejl = "Den frivillige kunne ikke slettes. Kun inaktive frivillige kan slettes.";
+            }
+        }
+        finally
+        {
+            sletter = false;
+        }
     }
 
     // Hjælpeklasse kun til formularen
