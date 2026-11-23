@@ -13,6 +13,10 @@ public class Timesheet
     // 18/11 (US-9): Sættes af ReportService ud fra ActivityRule.
     public bool StartedBefore2026 { get; set; }
     public bool BreaksActivityRule { get; set; }
+    
+    public long VolunteerId { get; set; }
+    public bool IsActive { get; set; }
+    public string RuleText { get; set; } = "";
 
     public Timesheet(string name, List<Attendance> sessions)
     {
