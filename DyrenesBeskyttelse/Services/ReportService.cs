@@ -36,6 +36,9 @@ public class ReportService
                 .ToList();
 
             var timesheet = Timesheet.Create(volunteer.GetFullName(), sessions);
+            timesheet.VolunteerId = volunteer.Id;    
+            timesheet.IsActive = volunteer.IsActive; 
+            timesheet.RuleText = volunteer.GetActivityRuleText();
 
             // 18/11 (US-9): Overholder den frivillige aktivitetsreglen i perioden? (se Models/ActivityRule.cs)
             // Sidste fremmøde før perioden tæller med, så mellemrummet ved periodens start bliver rigtigt.

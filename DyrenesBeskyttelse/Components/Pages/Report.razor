@@ -8,6 +8,7 @@
 @using DyrenesBeskyttelse.Components.Models
 @using DyrenesBeskyttelse.Services
 @using Microsoft.Extensions.DependencyInjection
+@using DyrenesBeskyttelse.Components.Services
 
 @inherits OwningComponentBase
 
@@ -33,7 +34,7 @@
 }
 else
 {
-    <Overview Report="report" />
+    <Overview Report="report" OnDeactivate="DeactivateAsync" Busy="busy" />
 }
 
 <div class="report-container">
@@ -85,6 +86,27 @@ else
 </AdminOnly>
 
 @code {
+    
+    private AdminService AdminService =>
+        ScopedServices.GetRequiredService<AdminService>();
+
+    private async Task DeactivateAsync(long volunteerId)
+    {
+        if (busy || report == null) return;
+        busy = true;
+
+        try
+        {
+            await AdminService.SetVolunteerActiveAsync(volunteerId, false);
+
+            // Hent rapporten igen for samme periode, så rækken viser "Inaktiv"
+            report = await ReportService.GetReport(report.StartDate, report.EndDate);
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
 
     // Retrieves ReportService from this component's DI scope.
     private ReportService ReportService =>

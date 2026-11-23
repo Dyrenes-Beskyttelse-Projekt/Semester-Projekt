@@ -1,163 +1,67 @@
-﻿
-@using DyrenesBeskyttelse.Components.Models
+﻿@using DyrenesBeskyttelse.Components.Models
 @using DyrenesBeskyttelse.Models
 
-@if (Report == null)
-{
-    <div class="alert alert-warning fs-4 text-center">
-        No report is currently available.
-    </div>
+@* US-8.8: dem der bryder reglen først, derefter færrest fremmøder først *@
+@{
+    var sorted = Report.GetSortedTimesheets();
+    var antalBrudt = Report.CountBreakingRule();
 }
-else
-{
-    <h1 class="text-center mb-3">Timesheet Overview</h1>
 
-    <div class="text-center mb-4">
-        <p class="fs-4 mb-1">Report Period</p>
+<p class="fw-semibold">@antalBrudt af @sorted.Count overholder ikke aktivitetsreglen</p>
 
-        <p class="fs-5">
-            @Report.StartDate.ToString("dd-MM-yyyy")
-            -
-            @Report.EndDate.ToString("dd-MM-yyyy")
-        </p>
-    </div>
-
-    @if (Report.Timesheets.Count == 0)
-    {
-        <div class="alert alert-info fs-4 text-center">
-            No volunteers found for this report.
-        </div>
-    }
-    else
-    {
-        <div class="volunteer-grid">
-
-            @foreach (var timesheet in Report.Timesheets)
-            {
-                <div class="card volunteer-card mb-4">
-
-                    @* 18/11 (US-9): Frivillige, der ikke overholder aktivitetsreglen, markeres med rødt. *@
-                    <div class="card-header text-white @(timesheet.BreaksActivityRule ? "brud" : "bg-primary")">
-                        <h2 class="mb-0">
-                            @timesheet.Name
-                        </h2>
-                        @if (timesheet.BreaksActivityRule)
+<table class="table table-striped align-middle admin-tabel">
+    <thead>
+        <tr>
+            <th>Navn</th>
+            <th>Fremmøde</th>
+            <th>Aktivitetsregel</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in sorted)
+        {
+            @* table-danger giver hele rækken rød baggrund (virker også sammen med table-striped) *@
+            <tr class="@(t.BreaksActivityRule ? "table-danger" : "table-success")">
+                <td>@t.Name</td>
+                <td>
+                    @if (t.Sessions.Count == 0)
+                    {
+                        <span>0 dage</span>
+                    }
+                    else
+                    {
+                        @string.Join(", ", t.Sessions.Select(s => s.SessionStart.ToString("dd/MM")).Distinct())
+                    }
+                </td>
+                <td>
+                    @(t.BreaksActivityRule ? "overholdes ikke" : "overholdes")
+                    <span class="text-muted">(@t.RuleText)</span>
+                </td>
+                <td>
+                    @* US-8.11: kun ved dem der bryder reglen *@
+                    @if (t.BreaksActivityRule)
+                    {
+                        @if (t.IsActive)
                         {
-                            <p class="mb-0 mt-1 fs-5">
-                                Overholder ikke aktivitetsreglen
-                                (@(timesheet.StartedBefore2026 ? "mindst hver 14. dag" : "mindst én gang om ugen"))
-                            </p>
-                        }
-                    </div>
-
-                    <div class="card-body">
-
-                        @if (timesheet.Sessions.Count == 0)
-                        {
-                            <p class="fs-5 text-muted mb-0">
-                                No attendance sessions.
-                            </p>
+                            <button class="btn btn-sm btn-outline-dark" disabled="@Busy"
+                                    @onclick="() => OnDeactivate.InvokeAsync(t.VolunteerId)">
+                                Gør inaktiv
+                            </button>
                         }
                         else
                         {
-                            <h5 class="mb-3">
-                                Attendance Sessions
-                            </h5>
-
-                            @foreach (var session in timesheet.Sessions)
-                            {
-                                <div class="session-entry">
-
-                                    <div class="session-info">
-                                        <span class="fw-bold">Start:</span>
-                                        @session.SessionStart.ToString("dd-MM-yyyy HH:mm")
-                                    </div>
-
-                                    <div class="session-info">
-                                        <span class="fw-bold">End:</span>
-
-                                        @if (session.SessionEnd.HasValue)
-                                        {
-                                            @session.SessionEnd.Value.ToString("dd-MM-yyyy HH:mm")
-                                        }
-                                        else
-                                        {
-                                            <span class="text-success">
-                                                Still active
-                                            </span>
-                                        }
-                                    </div>
-
-                                    <div class="session-info">
-                                        <span class="fw-bold">Duration:</span>
-
-                                        @if (session.GetDuration() is TimeSpan duration)
-                                        {
-                                            @($"{(int)duration.TotalHours}h {duration.Minutes}m")
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">
-                                                Not completed
-                                            </span>
-                                        }
-                                    </div>
-
-                                </div>
-                            }
+                            <span class="text-muted">Inaktiv</span>
                         }
-
-                    </div>
-                </div>
-            }
-
-        </div>
-    }
-}
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
 
 @code {
-    [Parameter]
-    public TimesheetReport? Report { get; set; }
+    [Parameter] public TimesheetReport Report { get; set; } = default!;
+    [Parameter] public EventCallback<long> OnDeactivate { get; set; }
+    [Parameter] public bool Busy { get; set; }
 }
-
-<style>
-    .volunteer-grid {
-        max-width: 850px;
-        margin: 0 auto;
-        padding: 10px;
-    }
-
-    .volunteer-card {
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
-    .volunteer-card .card-header {
-        padding: 18px;
-    }
-
-    /* 18/11 (US-9): rød markering (Dyrenes Beskyttelses røde farve) */
-    .volunteer-card .card-header.brud {
-        background-color: #7E0D00;
-    }
-
-    .volunteer-card .card-body {
-        padding: 20px;
-    }
-
-    .session-entry {
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 12px;
-        font-size: 1.1rem;
-    }
-
-    .session-info {
-        margin-bottom: 5px;
-    }
-
-    .session-info:last-child {
-        margin-bottom: 0;
-    }
-</style>
