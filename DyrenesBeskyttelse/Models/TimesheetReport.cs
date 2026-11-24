@@ -37,8 +37,9 @@ public class TimesheetReport
     }
 
 // Til linjen "X af Y overholder ikke aktivitetsreglen".
+    // 24/11: Kun aktive tælles med, ligesom Y (GetSortedTimesheets viser kun aktive, US-8.10).
     public int CountBreakingRule()
     {
-        return Timesheets.Count(t => t.BreaksActivityRule);
+        return Timesheets.Count(t => t.IsActive && t.BreaksActivityRule);
     }
 }

@@ -14,7 +14,8 @@ public class TimesheetReportSortingTests
             .Select(d => new Attendance(0, new DateTime(2026, 11, d, 10, 0, 0)))
             .ToList();
 
-        return new Timesheet(navn, sessions) { BreaksActivityRule = bryder };
+        // 24/11: IsActive = true, fordi rapporten kun viser aktive frivillige (US-8.10).
+        return new Timesheet(navn, sessions) { BreaksActivityRule = bryder, IsActive = true };
     }
 
     private static TimesheetReport Rapport(params Timesheet[] timesheets)
@@ -71,7 +72,7 @@ public class TimesheetReportSortingTests
             new(0, new DateTime(2026, 11, 16, 8, 0, 0)),
             new(0, new DateTime(2026, 11, 16, 12, 0, 0)),
             new(0, new DateTime(2026, 11, 16, 16, 0, 0))
-        }) { BreaksActivityRule = true };
+        }) { BreaksActivityRule = true, IsActive = true };
 
         var benn = Lav("Benn", true, 6, 13);
 

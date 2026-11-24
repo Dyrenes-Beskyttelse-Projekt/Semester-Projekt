@@ -3,7 +3,7 @@ using DyrenesBeskyttelse.Data;
 using DyrenesBeskyttelse.Models;
 using Microsoft.EntityFrameworkCore;
 using ClosedXML.Excel;
-using System.Reflection;
+using System.Globalization;
 
 namespace DyrenesBeskyttelse.Services;
 
@@ -57,178 +57,82 @@ public class ReportService
     }
     
     
-public byte[] GenerateExcelReport(TimesheetReport report)
-{
-    using var workbook = new XLWorkbook();
-
-    var worksheet = workbook.Worksheets.Add("Timesheet Report");
-
-    // Report title
-    worksheet.Cell("A1").Value = "Timesheet Report";
-    worksheet.Cell("A1").Style.Font.Bold = true;
-    worksheet.Cell("A1").Style.Font.FontSize = 16;
-
-    // Report period
-    worksheet.Cell("A2").Value = "Period:";
-    worksheet.Cell("B2").Value = report.StartDate;
-    worksheet.Cell("B2").Style.DateFormat.Format = "dd-MM-yyyy";
-
-    worksheet.Cell("C2").Value = "to";
-
-    worksheet.Cell("D2").Value = report.EndDate;
-    worksheet.Cell("D2").Style.DateFormat.Format = "dd-MM-yyyy";
-
-    // Get exportable properties from Timesheet
-    var properties = typeof(Timesheet)
-        .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-        .Where(p => p.CanRead && IsExcelType(p.PropertyType))
-        .ToList();
-
-    if (properties.Count == 0)
+    // 24/11 (US-13.1): Excel-filen har samme kolonner og rækkefølge som rapporten på skærmen
+    // (Overview.razor): Navn, Fremmøde og Aktivitetsregel, kun aktive, brud på reglen øverst med rødt.
+    // Liggende format og tilpasset til én sides bredde, så den kan printes.
+    public byte[] GenerateExcelReport(TimesheetReport report)
     {
-        throw new InvalidOperationException(
-            "No exportable Timesheet properties were found.");
-    }
+        var dansk = new CultureInfo("da-DK");
+        using var workbook = new XLWorkbook();
+        var ark = workbook.Worksheets.Add("Månedsrapport");
 
-    // Column headers
-    int headerRow = 4;
+        ark.Cell("A1").Value = "Månedsrapport";
+        ark.Cell("A1").Style.Font.Bold = true;
+        ark.Cell("A1").Style.Font.FontSize = 16;
+        ark.Cell("A2").Value = "Måned: " + report.StartDate.ToString("MMMM yyyy", dansk);
 
-    for (int column = 0; column < properties.Count; column++)
-    {
-        worksheet.Cell(headerRow, column + 1).Value =
-            properties[column].Name;
-    }
-
-    // Header styling
-    var headerRange = worksheet.Range(
-        headerRow, 1,
-        headerRow, properties.Count
-    );
-
-    headerRange.Style.Font.Bold = true;
-    headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
-
-    // Populate rows
-    int row = headerRow + 1;
-
-    foreach (var timesheet in report.Timesheets)
-    {
-        for (int column = 0; column < properties.Count; column++)
+        const int overskriftRaekke = 4;
+        string[] kolonner = { "Navn", "Fremmøde", "Aktivitetsregel" };
+        for (int i = 0; i < kolonner.Length; i++)
         {
-            var property = properties[column];
+            ark.Cell(overskriftRaekke, i + 1).Value = kolonner[i];
+        }
+        var overskrift = ark.Range(overskriftRaekke, 1, overskriftRaekke, kolonner.Length);
+        overskrift.Style.Font.Bold = true;
+        overskrift.Style.Fill.BackgroundColor = XLColor.LightGray;
 
-            var value = property.GetValue(timesheet);
+        int raekke = overskriftRaekke + 1;
+        foreach (var t in report.GetSortedTimesheets())
+        {
+            ark.Cell(raekke, 1).Value = t.Name;
+            ark.Cell(raekke, 2).Value = AttendanceText(t);
+            ark.Cell(raekke, 3).Value = (t.BreaksActivityRule ? "overholdes ikke" : "overholdes")
+                                        + $" ({t.RuleText})";
 
-            WriteExcelCell(
-                worksheet.Cell(row, column + 1),
-                value
-            );
+            if (t.BreaksActivityRule)
+            {
+                var linje = ark.Range(raekke, 1, raekke, kolonner.Length);
+                linje.Style.Fill.BackgroundColor = XLColor.FromHtml("#F8D7DA");
+                linje.Style.Font.FontColor = XLColor.FromHtml("#7E0D00");
+            }
+            raekke++;
         }
 
-        row++;
+        ark.Columns().AdjustToContents();
+        ark.Column(2).Width = Math.Min(ark.Column(2).Width, 60);
+        ark.Column(2).Style.Alignment.WrapText = true;
+        ark.PageSetup.PageOrientation = XLPageOrientation.Landscape;
+        ark.PageSetup.FitToPages(1, 0);
+
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
     }
 
-    // Formatting
-    worksheet.Columns().AdjustToContents();
-
-    worksheet.SheetView.FreezeRows(headerRow);
-
-    // Add filters to the headers
-    if (report.Timesheets.Count > 0)
+    // 24/11 (US-8.1): Måneder til rullemenuen: de seneste afsluttede måneder, nyeste først.
+    // Den indeværende måned er ikke afsluttet og kommer ikke med. Virker også ved årsskiftet:
+    // D. 1. januar 2027 står december 2026 øverst.
+    public static List<DateTime> GetCompletedMonths(DateTime today, int count = 12)
     {
-        worksheet.Range(
-            headerRow, 1,
-            row - 1, properties.Count
-        ).SetAutoFilter();
+        var thisMonth = new DateTime(today.Year, today.Month, 1);
+        return Enumerable.Range(1, count)
+            .Select(i => thisMonth.AddMonths(-i))
+            .ToList();
     }
 
-    // Convert workbook to byte array
-    using var stream = new MemoryStream();
-
-    workbook.SaveAs(stream);
-
-    return stream.ToArray();
-}
-
-
-// Determines which property types can be exported to Excel.
-private static bool IsExcelType(Type type)
-{
-    type = Nullable.GetUnderlyingType(type) ?? type;
-
-    return type.IsPrimitive
-        || type.IsEnum
-        || type == typeof(string)
-        || type == typeof(decimal)
-        || type == typeof(DateTime)
-        || type == typeof(DateOnly)
-        || type == typeof(TimeOnly)
-        || type == typeof(TimeSpan)
-        || type == typeof(Guid);
-}
-
-// Writes values while preserving their Excel data types.
-private static void WriteExcelCell(
-    IXLCell cell,
-    object? value)
-{
-    switch (value)
+    // 24/11 (US-13.1): Fremmøde som i rapporten: datoerne én gang hver ("dd/MM") eller "0 dage".
+    public static string AttendanceText(Timesheet t)
     {
-        case null:
-            cell.Value = string.Empty;
-            break;
-
-        case string v:
-            cell.Value = v;
-            break;
-
-        case int v:
-            cell.Value = v;
-            break;
-
-        case long v:
-            cell.Value = v;
-            break;
-
-        case decimal v:
-            cell.Value = v;
-            break;
-
-        case double v:
-            cell.Value = v;
-            break;
-
-        case float v:
-            cell.Value = v;
-            break;
-
-        case bool v:
-            cell.Value = v;
-            break;
-
-        case DateTime v:
-            cell.Value = v;
-            cell.Style.DateFormat.Format = "dd-MM-yyyy HH:mm";
-            break;
-
-        case DateOnly v:
-            cell.Value = v.ToString("dd-MM-yyyy");
-            break;
-
-        case TimeOnly v:
-            cell.Value = v.ToString("HH:mm");
-            break;
-
-        case Enum v:
-            cell.Value = v.ToString();
-            break;
-
-        default:
-            cell.Value = value.ToString() ?? string.Empty;
-            break;
+        if (t.Sessions.Count == 0)
+        {
+            return "0 dage";
+        }
+        return string.Join(", ", t.Sessions
+            .Select(s => s.SessionStart.Date)
+            .Distinct()
+            .OrderBy(d => d)
+            .Select(d => d.ToString("dd/MM", CultureInfo.InvariantCulture)));
     }
-}
-
 
     public async Task<TimesheetReport> GetReport(DateTime start, DateTime end)
     {

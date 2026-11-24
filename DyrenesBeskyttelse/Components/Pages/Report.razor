@@ -11,13 +11,14 @@
 @inherits OwningComponentBase
 @inject IJSRuntime Js
 
-<PageTitle>LogCat · Extract Report</PageTitle>
+<PageTitle>LogCat · Månedsrapport</PageTitle>
 
 <AdminOnly>
 
-    <h1 class="text-center mb-4">Extract Report</h1>
+    @* 24/11: Danske tekster, så de passer til vejledningen (besluttet ved retrospective i sprint 2). *@
+    <h1 class="text-center mb-4">Månedsrapport</h1>
 
-    @* Only render the overview when a report exists. *@
+    @* Rapporten vises kun, når den er hentet. *@
     @if (report != null)
     {
         <Overview Report="report"
@@ -30,7 +31,7 @@
                     @onclick="ExportReportAsync"
                     disabled="@busy">
 
-                @(busy ? "Processing..." : "Download Excel")
+                @(busy ? "Vent venligst ..." : "Download som Excel")
 
             </button>
         </div>
@@ -43,7 +44,7 @@
 
             <div class="mb-4">
                 <label class="form-label fs-4" for="selectedMonth">
-                    Select Month
+                    Vælg måned
                 </label>
 
                 <InputSelect id="selectedMonth"
@@ -51,11 +52,11 @@
                              @bind-Value="selectedMonth"
                              disabled="@busy">
 
-                    <option value="">-- Select a month --</option>
+                    <option value="">-- Vælg en måned --</option>
 
                     @foreach (var month in completedMonths)
                     {
-                        <option value="@month.Month">
+                        <option value="@month.Key">
                             @month.Name
                         </option>
                     }
@@ -66,9 +67,9 @@
             <div class="text-center mt-5">
                 <button type="submit"
                         class="btn btn-primary btn-lg report-button"
-                        disabled="@(busy || selectedMonth == null || completedMonths.Count == 0)">
+                        disabled="@(busy || string.IsNullOrEmpty(selectedMonth) || completedMonths.Count == 0)">
 
-                    @(busy ? "Extracting..." : "Extract Report")
+                    @(busy ? "Henter rapporten ..." : "Vis rapport")
 
                 </button>
             </div>
@@ -102,31 +103,27 @@
     private bool messageIsError;
     private bool busy;
 
-    // Available completed months.
+    // 24/11 (US-8.1): De seneste 12 afsluttede måneder, nyeste øverst (se ReportService.GetCompletedMonths).
     private List<MonthOption> completedMonths = new();
 
-    // Currently selected month.
-    private int? selectedMonth;
+    // Den valgte måned som "yyyy-MM". Sidste måned er valgt på forhånd.
+    private string? selectedMonth;
 
     protected override void OnInitialized()
     {
-        var today = DateTime.Today;
+        var dansk = new System.Globalization.CultureInfo("da-DK");
 
-        completedMonths = Enumerable.Range(1, 12)
-            .Where(month => month < today.Month)
-            .Select(month =>
+        completedMonths = ReportService.GetCompletedMonths(DateTime.Today)
+            .Select(startDate => new MonthOption
             {
-                var startDate = new DateTime(today.Year, month, 1);
-
-                return new MonthOption
-                {
-                    Month = month,
-                    Name = startDate.ToString("MMMM yyyy"),
-                    StartDate = startDate,
-                    EndDate = startDate.AddMonths(1).AddDays(-1)
-                };
+                Key = startDate.ToString("yyyy-MM"),
+                Name = startDate.ToString("MMMM yyyy", dansk),
+                StartDate = startDate,
+                EndDate = startDate.AddMonths(1).AddDays(-1)
             })
             .ToList();
+
+        selectedMonth = completedMonths.FirstOrDefault()?.Key;
     }
 
     private async Task ExtractReportAsync()
@@ -139,21 +136,21 @@
         message = null;
         messageIsError = false;
 
-        if (selectedMonth == null)
+        if (string.IsNullOrEmpty(selectedMonth))
         {
             messageIsError = true;
-            message = "Please select a month.";
+            message = "Vælg en måned.";
             return;
         }
 
         // Resolve the selected month into its date range.
         var selected = completedMonths
-            .FirstOrDefault(m => m.Month == selectedMonth);
+            .FirstOrDefault(m => m.Key == selectedMonth);
 
         if (selected == null)
         {
             messageIsError = true;
-            message = "The selected month is not available.";
+            message = "Den valgte måned kan ikke vælges.";
             return;
         }
 
@@ -174,7 +171,7 @@
             Console.WriteLine($"Report extraction error: {ex}");
 
             messageIsError = true;
-            message = "An error occurred while extracting the report.";
+            message = "Der skete en fejl, da rapporten skulle hentes.";
         }
         finally
         {
@@ -208,7 +205,7 @@
             Console.WriteLine($"Volunteer deactivation error: {ex}");
 
             messageIsError = true;
-            message = "An error occurred while updating the volunteer.";
+            message = "Der skete en fejl, da den frivillige skulle gøres inaktiv.";
         }
         finally
         {
@@ -235,13 +232,13 @@
             if (excelFile.Length == 0)
             {
                 throw new InvalidOperationException(
-                    "The generated Excel file was empty."
+                    "Excel-filen er tom."
                 );
             }
 
             // Generate filename based on the report period.
             string fileName =
-                $"TimesheetReport_{report.StartDate:yyyy-MM}.xlsx";
+                $"Maanedsrapport_{report.StartDate:yyyy-MM}.xlsx";
 
             // Trigger the browser download.
             await Js.InvokeVoidAsync(
@@ -255,7 +252,7 @@
             Console.WriteLine($"Excel export error: {ex}");
 
             messageIsError = true;
-            message = $"Excel export failed: {ex.Message}";
+            message = "Der skete en fejl, da Excel-filen skulle laves.";
         }
         finally
         {
@@ -265,7 +262,7 @@
 
     public class MonthOption
     {
-        public int Month { get; set; }
+        public string Key { get; set; } = string.Empty;
 
         public string Name { get; set; } = string.Empty;
 

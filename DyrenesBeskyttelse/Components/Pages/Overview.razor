@@ -1,10 +1,11 @@
 ﻿
 @using DyrenesBeskyttelse.Components.Models
 @using DyrenesBeskyttelse.Models
+@using DyrenesBeskyttelse.Services
 
 @if (Report == null)
 {
-    <p class="text-muted">No report available.</p>
+    <p class="text-muted">Ingen rapport.</p>
 }
 else
 {
@@ -39,19 +40,8 @@ else
                     <td>@t.Name</td>
 
                     <td>
-                        @if (t.Sessions.Count == 0)
-                        {
-                            <span>0 dage</span>
-                        }
-                        else
-                        {
-                            @string.Join(
-                                ", ",
-                                t.Sessions
-                                    .Select(s => s.SessionStart.ToString("dd/MM"))
-                                    .Distinct()
-                            )
-                        }
+                        @* 24/11: Samme tekst som i Excel-filen (ReportService.AttendanceText). *@
+                        @ReportService.AttendanceText(t)
                     </td>
 
                     <td>
