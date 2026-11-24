@@ -52,6 +52,10 @@
 
     .admin-antal { font-weight: 600; margin-bottom: 10px; }
 
+    /* 24/11: Overskrift og forklaring over listen */
+    .admin-overskrift { color: var(--db-roed); font-weight: bold; font-size: 1.5rem; margin: 0 0 6px 0; }
+    .admin-forklaring { color: var(--db-sort); margin: 0 0 14px 0; max-width: 60rem; }
+
     /* Tabellen: creme overskriftsrække med rød streg, creme striber */
     .admin-tabel {
         --bs-table-striped-bg: rgba(245, 240, 230, 0.6);
@@ -93,7 +97,7 @@
 <div class="admin-side">
     <div class="admin-top">
         <h1>Administration</h1>
-        <p>Velkommen @Session.FullName. Her er alle frivillige.</p>
+        <p>Velkommen @Session.FullName.</p>
     </div>
 
     @* Menuen til de andre administrationssider. Når en ny side er lavet, tilføjes en knap her:
@@ -115,6 +119,13 @@
     }
     else
     {
+        @* 24/11 (sprint 3, Stines feedback): Overskrift og forklaring, så forskellen til
+           månedsrapporten er tydelig. Listen er "lige nu", rapporten er "en afsluttet måned". *@
+        <h2 class="admin-overskrift">Alle frivillige</h2>
+        <p class="admin-forklaring">Listen viser alle frivillige med kontaktoplysninger, og hvem der er her nu.
+            Inaktive står nederst. Vil du se, hvem der har været her i en bestemt måned, og hvem der ikke
+            overholder aktivitetsreglen, så tryk på "Månedsrapport".</p>
+
         <p class="admin-antal">@volunteers.Count frivillige, heraf @volunteers.Count(v => v.IsActive) aktive
             og @volunteers.Count(IsHereNow) tjekket ind lige nu.</p>
 
